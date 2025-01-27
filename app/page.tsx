@@ -6,7 +6,17 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
 import {useEffect, useState} from "react";
-import {Clock, Download, FileText, FolderCheck, FolderInput, GitPullRequestCreate, Loader2, Trash} from "lucide-react";
+import {
+    Download,
+    Edit,
+    FileText,
+    FolderCheck,
+    FolderInput,
+    GitPullRequestCreate,
+    Loader2,
+    Trash,
+    Trash2
+} from "lucide-react";
 import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Separator} from "@/components/ui/separator";
@@ -16,27 +26,33 @@ import {useToast} from "@/hooks/use-toast"
 import {deleteFile, handleDownload, loadRecentFiles, RecentFile, saveFileToDirectory} from "@/services/fileService";
 import {
     Pagination,
-    PaginationContent, PaginationEllipsis,
+    PaginationContent,
+    PaginationEllipsis,
     PaginationItem,
-    PaginationLink, PaginationNext,
+    PaginationLink,
+    PaginationNext,
     PaginationPrevious
 } from "@/components/ui/pagination";
 
 const formSchema = z.object({
-    serviceName: z.string().min(1, "Service name is required"),
-    tag: z.string().min(1, "Tag is required"),
+    serviceName: z.string()
+        .min(1, "Service name is required")
+        .regex(/^[a-zA-Z0-9- ]+$/, "Hanya huruf, angka, dan spasi")
+        .transform(val => val.trim().replace(/\s+/g, '-').toLowerCase()),
+    tag: z.string()
+        .min(1, "Tag is required")
+        .regex(/^\d+\.\d+\.\d+$/, "Format versi: X.X.X (contoh: 1.0.0)"),
 });
-
 export default function Home() {
     const {toast} = useToast();
-
     const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
     const [isApiSupported, setIsApiSupported] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
-    const [lastSaved, setLastSaved] = useState<{ name: string, path: string } | null>(null);
+    const [_, setLastSaved] = useState<{ name: string, path: string } | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(8);
+    const [serviceHistory, setServiceHistory] = useState<string[]>([]);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -45,6 +61,21 @@ export default function Home() {
             tag: "",
         },
     });
+
+    const handleServiceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value;
+        const formatted = rawValue
+            .replace(/[^a-zA-Z0-9 -]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        form.setValue('serviceName', formatted, {shouldValidate: true});
+    };
+
+    const serviceNameWatch = form.watch('serviceName');
+    const tagWatch = form.watch('tag');
+    const fileNamePreview = `${(serviceNameWatch || 'service-name')
+        .replace(/\s+/g, '-')
+        .toLowerCase()}-${tagWatch || '0.0.0'}.txt`;
 
     useEffect(() => {
         if (!window.showDirectoryPicker) {
@@ -95,15 +126,36 @@ export default function Home() {
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         const content = `${values.serviceName}:${values.tag}`;
-        const filename = `${values.serviceName.replace(/ /g, '-')}-${values.tag}.txt`;
+        const filename = `${values.serviceName}-${values.tag}.txt`;
+
+        const isDuplicate = recentFiles.some(file =>
+            file.name.toLowerCase() === filename.toLowerCase()
+        );
+
+        if (isDuplicate) {
+            toast({
+                title: "File Already Exists",
+                description: "Rename the service or increment the version tag",
+                variant: "destructive",
+            });
+            return;
+        }
 
         if (directoryHandle && isApiSupported) {
             try {
                 setIsProcessing(true);
                 const newFile = await saveFileToDirectory(directoryHandle, filename, content);
                 setRecentFiles(prev => [newFile, ...prev]);
+                setServiceHistory((prev) => {
+                    const newHistory = new Set([values.serviceName, ...Array.from(prev)]);
+                    return Array.from(newHistory);
+                });
                 setLastSaved(newFile);
-                setTimeout(() => setLastSaved(null), 8000);
+                toast({
+                    title: "File Saved",
+                    description: `${filename} saved to ${directoryHandle.name}`,
+                    className: "bg-green-500",
+                })
             } catch (_error) {
                 toast({
                     title: "Save Failed",
@@ -116,6 +168,10 @@ export default function Home() {
         } else {
             const newFile = handleDownload(filename, content);
             setRecentFiles(prev => [newFile, ...prev]);
+            setServiceHistory((prev) => {
+                const newHistory = new Set([values.serviceName, ...Array.from(prev)]);
+                return Array.from(newHistory);
+            });
             setLastSaved(newFile);
             setTimeout(() => setLastSaved(null), 5000);
         }
@@ -171,7 +227,7 @@ export default function Home() {
             <div className="py-6 mx-auto container">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Form Section */}
-                    <Card className="shadow-lg hover:shadow-xl transition-shadow h-[380px]">
+                    <Card className="shadow-lg hover:shadow-xl transition-shadow h-fit">
                         <CardHeader className="pb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-3 bg-primary/10 rounded-lg">
@@ -199,13 +255,24 @@ export default function Home() {
                                                 <FormItem>
                                                     <FormLabel className="flex items-center gap-2 text-primary/80">
                                                         Service Name
+                                                        <span className="text-xs text-muted-foreground">
+                                                            (auto-format ke lowercase)
+                                                        </span>
                                                     </FormLabel>
                                                     <FormControl>
-                                                        <Input
-                                                            placeholder="e.g. user-service"
-                                                            className="h-12 text-base"
-                                                            {...field}
-                                                        />
+                                                        <div className="relative">
+                                                            <Input
+                                                                {...field}
+                                                                onChange={handleServiceNameChange}
+                                                                placeholder="e.g. User Service"
+                                                                className="h-12 text-base uppercase"
+                                                            />
+                                                            <datalist id="serviceHistory">
+                                                                {serviceHistory.map((name, i) => (
+                                                                    <option key={i} value={name}/>
+                                                                ))}
+                                                            </datalist>
+                                                        </div>
                                                     </FormControl>
                                                     <FormMessage className="text-xs"/>
                                                 </FormItem>
@@ -219,18 +286,54 @@ export default function Home() {
                                                 <FormItem>
                                                     <FormLabel className="flex items-center gap-2 text-primary/80">
                                                         Version Tag
+                                                        <span className="text-xs text-muted-foreground">
+                                                            (Format: X.X.X)
+                                                        </span>
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
+                                                            {...field}
                                                             placeholder="e.g. 1.0.0"
                                                             className="h-12 text-base"
-                                                            {...field}
                                                         />
                                                     </FormControl>
                                                     <FormMessage className="text-xs"/>
                                                 </FormItem>
                                             )}
                                         />
+                                    </div>
+
+                                    <div className="mt-4 p-4 bg-muted/50 rounded">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <FileText className="h-4 w-4"/>
+                                            <span className="font-medium">Preview:</span>
+                                            <pre className="flex-1">
+                                                {serviceNameWatch || 'service-name'}:{tagWatch || '0.0.0'}
+                                            </pre>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                type="button"
+                                                onClick={() => {
+                                                    form.reset({
+                                                        serviceName: "",
+                                                        tag: "",
+                                                    });
+                                                    toast({
+                                                        title: "Input Cleared",
+                                                        description: "Service name and tag cleared",
+                                                        className: "bg-yellow-500",
+                                                    });
+                                                }}
+                                            >
+                                                <Trash2
+                                                    className="h-4 w-4 mr-2"/>
+                                                Bersihkan
+                                            </Button>
+                                        </div>
+                                        <div className="mt-2 text-xs text-muted-foreground">
+                                            Nama file: {fileNamePreview}
+                                        </div>
                                     </div>
 
                                     <div className="space-y-4">
@@ -256,22 +359,8 @@ export default function Home() {
                                 </form>
                             </Form>
                         </CardContent>
-
-                        {lastSaved && (
-                            <div
-                                className="mt-10 p-4 bg-green-50/50 rounded-lg border border-green-200 flex items-center gap-3">
-                                <FolderCheck className="h-6 w-6 text-green-600 flex-shrink-0"/>
-                                <div>
-                                    <p className="font-medium text-green-800">File saved successfully!</p>
-                                    <p className="text-sm text-green-700 mt-1">
-                                        {lastSaved.name} saved to {lastSaved.path}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
                     </Card>
 
-                    {/* Recent Files Section */}
                     <Card className="shadow-lg hover:shadow-xl transition-shadow h-fit">
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -311,41 +400,45 @@ export default function Home() {
                                 )}
                             </div>
                         </CardHeader>
-                        <Separator className="mb-4"/>
+                        <Separator/>
                         <CardContent className="space-y-3  p-2 lg:p-4">
                             {recentFiles.length > 0 ? (
-                                paginatedFiles
-                                    .filter(file => {
-                                        const fileDate = new Date(file.createdAt);
-                                        const oneDayAgo = new Date();
-                                        oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-                                        return fileDate >= oneDayAgo;
-                                    })
-                                    .map((file, index) => (
+                                paginatedFiles.map((file, index) => {
+                                    const serviceName = file.name.replace('.txt', '').split('-').slice(0, -1).join('-')
+                                    const tag = file.name.replace('.txt', '').split('-').slice(-1).join('-')
+                                    return (
                                         <div
                                             key={index}
                                             className="group flex flex-col sm:flex-row items-start sm:items-center p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer lg:justify-between"
-                                            onClick={() => navigator.clipboard.writeText(`${file.path}/${file.name}`)}
                                         >
                                             <div className="space-y-1 w-full lg:w-auto">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium">{file.name.replace('.txt', '')}</span>
+                                                    <span className="font-medium">
+                                                        <span className="text-primary">
+                                                            {serviceName}
+                                                        </span>
+                                                    </span>
                                                     <Badge variant="outline" className="text-xs py-0 px-2">
                                                         .txt
                                                     </Badge>
                                                 </div>
-                                                <p className="text-sm text-muted-foreground font-mono truncate sm:max-w-sm lg:max-w-full">
+                                                <p className="text-sm text-muted-foreground font-mono truncate">
                                                     {file.path}
                                                 </p>
                                             </div>
 
-                                            <div
-                                                className="flex flex-row justify-between items-center gap-2 sm:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
-                                                <Badge variant="outline" className="gap-2 text-xs sm:text-sm">
-                                                    <Clock className="h-3.5 w-3.5"/>
-                                                    {file.createdAt}
-                                                </Badge>
-
+                                            <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-primary"
+                                                    onClick={() => {
+                                                        form.setValue('serviceName', serviceName);
+                                                        form.setValue('tag', tag);
+                                                    }}
+                                                >
+                                                    <Edit className="h-4 w-4"/>
+                                                </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -359,7 +452,8 @@ export default function Home() {
                                                 </Button>
                                             </div>
                                         </div>
-                                    ))
+                                    )
+                                })
                             ) : (
                                 <div className="space-y-3">
                                     {Array(3)
@@ -379,7 +473,7 @@ export default function Home() {
                                 className="border p-2 rounded w-12"
                                 min={1}
                             ></Input>
-                            <div className="w-4/6 ms-2">
+                            <div className="w-4/6 ms-4">
                                 <span className="text-sm text-muted-foreground">
                                     Showing {Math.min((currentPage - 1) * itemsPerPage + 1, recentFiles.length)} -{" "}
                                     {Math.min(currentPage * itemsPerPage, recentFiles.length)} of {recentFiles.length} files
@@ -416,7 +510,7 @@ export default function Home() {
 
                                     {currentPage < totalPages - 2 && (
                                         <PaginationItem>
-                                            <PaginationEllipsis />
+                                            <PaginationEllipsis/>
                                         </PaginationItem>
                                     )}
 
