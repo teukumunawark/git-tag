@@ -7,26 +7,23 @@ import * as z from "zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
 import {useEffect, useState} from "react";
 import {Clock, Download, FileText, FolderCheck, FolderInput, Loader2, Trash} from "lucide-react";
-import {toast} from "@/hooks/use-toast";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Separator} from "@/components/ui/separator";
 import {Skeleton} from "@/components/ui/skeleton";
 import {ModeToggle} from "@/components/mode-toggle";
+import {useToast} from "@/hooks/use-toast"
+import {deleteFile, handleDownload, loadRecentFiles, RecentFile, saveFileToDirectory} from "@/services/fileService";
+import {ScrollArea} from "@/components/ui/scroll-area";
 
 const formSchema = z.object({
     serviceName: z.string().min(1, "Service name is required"),
     tag: z.string().min(1, "Tag is required"),
 });
 
-type RecentFile = {
-    name: string;
-    path: string;
-    createdAt: string;
-    source: 'directory' | 'download';
-};
-
 export default function Home() {
+    const {toast} = useToast();
+
     const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
     const [isApiSupported, setIsApiSupported] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -59,7 +56,8 @@ export default function Home() {
                 title: "Location Set",
                 description: "Files will be saved to selected directory",
             });
-            await loadRecentFiles(handle);
+            const recent = await loadRecentFiles(handle);
+            setRecentFiles(recent);
         } catch (_error) {
             toast({
                 title: "Action Cancelled",
@@ -69,111 +67,9 @@ export default function Home() {
         }
     };
 
-    const loadRecentFiles = async (directoryHandle: FileSystemDirectoryHandle) => {
-        const recent: RecentFile[] = [];
-
-        for await (const entry of directoryHandle.values()) {
-            if (entry.kind === 'file' && entry.name.endsWith('.txt')) {
-                try {
-                    const fileHandle = entry as FileSystemFileHandle;
-                    const file = await fileHandle.getFile();
-
-                    recent.push({
-                        name: entry.name,
-                        path: `${directoryHandle.name}/${entry.name}`,
-                        createdAt: new Date(file.lastModified).toLocaleString(),
-                        source: 'directory' as const
-                    });
-                } catch (error) {
-                    console.error(`Failed to get metadata for ${entry.name}:`, error);
-                }
-            }
-        }
-
-        recent.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-        setRecentFiles(recent);
-    };
-
-    const saveFileToDirectory = async (filename: string, content: string) => {
-        if (!directoryHandle) return;
-
-        try {
-            setIsProcessing(true);
-            const fileHandle = await directoryHandle.getFileHandle(filename, {create: true});
-            const writable = await fileHandle.createWritable();
-            await writable.write(content);
-            await writable.close();
-
-            const newFile = {
-                name: filename,
-                path: `${directoryHandle.name}/${filename}`,
-                createdAt: new Date().toLocaleString(),
-                source: 'directory' as const
-            };
-
-            setRecentFiles(prev => [newFile, ...prev.slice(0, 10)]);
-            setLastSaved(newFile);
-            setTimeout(() => setLastSaved(null), 8000);
-
-        } catch (_error) {
-            toast({
-                title: "Save Failed",
-                description: "Please check directory permissions",
-                variant: "destructive",
-            });
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleDownload = (filename: string, content: string) => {
-        setIsProcessing(true);
-        try {
-            const blob = new Blob([content], {type: "text/plain"});
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            link.click();
-            URL.revokeObjectURL(url);
-
-            const newFile = {
-                name: filename,
-                path: "Downloads folder",
-                createdAt: new Date().toLocaleString(),
-                source: 'download' as const
-            };
-
-            setRecentFiles(prev => [newFile, ...prev.slice(0, 10)]);
-            setLastSaved(newFile);
-            setTimeout(() => setLastSaved(null), 5000);
-
-        } catch (_error) {
-            toast({
-                title: "Download Failed",
-                description: "Error processing file",
-                variant: "destructive",
-            });
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
     const handleDeleteFile = async (file: RecentFile) => {
         try {
-            if (file.source === 'directory') {
-                if (!directoryHandle) {
-                    toast({
-                        title: "Deletion Failed",
-                        description: "Directory not selected",
-                        variant: "destructive",
-                    });
-                    return;
-                }
-                await directoryHandle.removeEntry(file.name);
-            }
-
+            await deleteFile(file, directoryHandle);
             setRecentFiles(prev => prev.filter(f => f.name !== file.name));
             toast({
                 title: "File Deleted",
@@ -189,18 +85,33 @@ export default function Home() {
         }
     };
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    const onSubmit = async (values: z.infer<typeof formSchema>) => {
         const content = `${values.serviceName}:${values.tag}`;
         const filename = `${values.serviceName.replace(/ /g, '-')}-${values.tag}.txt`;
 
         if (directoryHandle && isApiSupported) {
-            saveFileToDirectory(filename, content);
+            try {
+                setIsProcessing(true);
+                const newFile = await saveFileToDirectory(directoryHandle, filename, content);
+                setRecentFiles(prev => [newFile, ...prev]);
+                setLastSaved(newFile);
+                setTimeout(() => setLastSaved(null), 8000);
+            } catch (_error) {
+                toast({
+                    title: "Save Failed",
+                    description: "Please check directory permissions",
+                    variant: "destructive",
+                });
+            } finally {
+                setIsProcessing(false);
+            }
         } else {
-            handleDownload(filename, content);
+            const newFile = handleDownload(filename, content);
+            setRecentFiles(prev => [newFile, ...prev]);
+            setLastSaved(newFile);
+            setTimeout(() => setLastSaved(null), 5000);
         }
-
-        // form.reset();
-    }
+    };
 
 
     return (
@@ -209,13 +120,12 @@ export default function Home() {
                 className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-16 items-center justify-between px-4">
                     <span className="font-semibold">PROJECT AMBISIUS SQUAD 2</span>
-
                     <ModeToggle/>
                 </div>
             </header>
 
             {/* Main Content */}
-            <div className="py-10">
+            <div className="py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Form Section */}
                     <Card className="shadow-lg hover:shadow-xl transition-shadow h-[380px]">
@@ -368,7 +278,7 @@ export default function Home() {
                                         oneDayAgo.setDate(oneDayAgo.getDate() - 1);
                                         return fileDate >= oneDayAgo;
                                     })
-                                    .slice(0, 9)
+                                    .slice(0, 10)
                                     .map((file, index) => (
                                         <div
                                             key={index}
@@ -377,7 +287,8 @@ export default function Home() {
                                         >
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium">{file.name.replace('.txt', '')}</span>
+                                                        <span
+                                                            className="font-medium">{file.name.replace('.txt', '')}</span>
                                                     <Badge variant="outline" className="text-xs py-0 px-2">
                                                         .txt
                                                     </Badge>
