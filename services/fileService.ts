@@ -2,7 +2,7 @@ export type RecentFile = {
     name: string;
     path: string;
     createdAt: string;
-    source: 'directory' | 'download';
+    source: 'directory' | 'download' | 'upload';
 };
 
 export const loadRecentFiles = async (directoryHandle: FileSystemDirectoryHandle): Promise<RecentFile[]> => {

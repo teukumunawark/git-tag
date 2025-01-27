@@ -6,14 +6,21 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
 import {useEffect, useState} from "react";
-import {Clock, Download, FileText, FolderCheck, FolderInput, Loader2, Trash} from "lucide-react";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Clock, Download, FileText, FolderCheck, FolderInput, GitPullRequestCreate, Loader2, Trash} from "lucide-react";
+import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Separator} from "@/components/ui/separator";
 import {Skeleton} from "@/components/ui/skeleton";
 import {ModeToggle} from "@/components/mode-toggle";
 import {useToast} from "@/hooks/use-toast"
 import {deleteFile, handleDownload, loadRecentFiles, RecentFile, saveFileToDirectory} from "@/services/fileService";
+import {
+    Pagination,
+    PaginationContent, PaginationEllipsis,
+    PaginationItem,
+    PaginationLink, PaginationNext,
+    PaginationPrevious
+} from "@/components/ui/pagination";
 
 const formSchema = z.object({
     serviceName: z.string().min(1, "Service name is required"),
@@ -28,6 +35,8 @@ export default function Home() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
     const [lastSaved, setLastSaved] = useState<{ name: string, path: string } | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(8);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -112,19 +121,54 @@ export default function Home() {
         }
     };
 
+    const totalPages = Math.ceil(recentFiles.length / itemsPerPage);
 
+    const getVisiblePages = () => {
+        const maxPages = 5;
+        const startPage = Math.max(currentPage - Math.floor(maxPages / 2), 1);
+        const endPage = Math.min(startPage + maxPages - 1, totalPages);
+
+        return Array.from({length: endPage - startPage + 1}, (_, i) => startPage + i);
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
+
+    const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseInt(event.target.value);
+        if (value > 0) {
+            setItemsPerPage(value);
+            setCurrentPage(1);
+        }
+    };
+
+    const paginatedFiles = recentFiles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     return (
-        <div className="max-w-screen-2xl mx-auto">
+        <div className="mx-auto px-4 lg:px-0">
             <header
-                className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-16 items-center justify-between px-4">
-                    <span className="font-semibold">PROJECT AMBISIUS SQUAD 2</span>
+                className="sticky top-0 z-50 w-full border-b backdrop-blur">
+                <div className="container flex h-20 items-center mx-auto justify-between">
+                    <div className="flex items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg flex items-center justify-center">
+                                <GitPullRequestCreate className="text-xl font-bold"/>
+                            </div>
+                            <span
+                                className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent hidden lg:inline-block">Project Ambisius Squad 2<span
+                                className="text-sm ml-2 bg-primary/10 text-primary px-2 py-1 rounded-full hidden lg:inline-block">v1.0</span></span>
+                        </div>
+                    </div>
                     <ModeToggle/>
                 </div>
             </header>
 
             {/* Main Content */}
-            <div className="py-6">
+            <div className="py-6 mx-auto container">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Form Section */}
                     <Card className="shadow-lg hover:shadow-xl transition-shadow h-[380px]">
@@ -254,13 +298,13 @@ export default function Home() {
                                             <>
                                                 <FolderCheck className="h-5 w-5 text-green-500"/>
                                                 <span
-                                                    className="truncate max-w-[200px]">Saving to: {directoryHandle.name}
+                                                    className="truncate hidden lg:inline-block">Saving to: {directoryHandle.name}
                                                     </span>
                                             </>
                                         ) : (
                                             <>
                                                 <FolderInput className="h-5 w-5"/>
-                                                <span>Select Save Location</span>
+                                                <span className="hidden lg:inline-block">Select Save Location</span>
                                             </>
                                         )}
                                     </Button>
@@ -268,39 +312,40 @@ export default function Home() {
                             </div>
                         </CardHeader>
                         <Separator className="mb-4"/>
-                        <CardContent className="space-y-3">
+                        <CardContent className="space-y-3  p-2 lg:p-4">
                             {recentFiles.length > 0 ? (
-                                recentFiles
+                                paginatedFiles
                                     .filter(file => {
                                         const fileDate = new Date(file.createdAt);
                                         const oneDayAgo = new Date();
                                         oneDayAgo.setDate(oneDayAgo.getDate() - 1);
                                         return fileDate >= oneDayAgo;
                                     })
-                                    .slice(0, 10)
                                     .map((file, index) => (
                                         <div
                                             key={index}
-                                            className="group flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
+                                            className="group flex flex-col sm:flex-row items-start sm:items-center p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer lg:justify-between"
                                             onClick={() => navigator.clipboard.writeText(`${file.path}/${file.name}`)}
                                         >
-                                            <div className="space-y-1">
+                                            <div className="space-y-1 w-full lg:w-auto">
                                                 <div className="flex items-center gap-2">
-                                                        <span
-                                                            className="font-medium">{file.name.replace('.txt', '')}</span>
+                                                    <span className="font-medium">{file.name.replace('.txt', '')}</span>
                                                     <Badge variant="outline" className="text-xs py-0 px-2">
                                                         .txt
                                                     </Badge>
                                                 </div>
-                                                <p className="text-sm text-muted-foreground font-mono truncate max-w-[500px]">
+                                                <p className="text-sm text-muted-foreground font-mono truncate sm:max-w-sm lg:max-w-full">
                                                     {file.path}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <Badge variant="outline" className="gap-2 text-xs">
+
+                                            <div
+                                                className="flex flex-row justify-between items-center gap-2 sm:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
+                                                <Badge variant="outline" className="gap-2 text-xs sm:text-sm">
                                                     <Clock className="h-3.5 w-3.5"/>
                                                     {file.createdAt}
                                                 </Badge>
+
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -325,6 +370,68 @@ export default function Home() {
                                 </div>
                             )}
                         </CardContent>
+                        <CardFooter className="flex pt-2">
+                            <Input
+                                id="itemsPerPage"
+                                type="number"
+                                value={itemsPerPage}
+                                onChange={handleItemsPerPageChange}
+                                className="border p-2 rounded w-12"
+                                min={1}
+                            ></Input>
+                            <div className="w-4/6 ms-2">
+                                <span className="text-sm text-muted-foreground">
+                                    Showing {Math.min((currentPage - 1) * itemsPerPage + 1, recentFiles.length)} -{" "}
+                                    {Math.min(currentPage * itemsPerPage, recentFiles.length)} of {recentFiles.length} files
+                                </span>
+
+                            </div>
+
+                            <Pagination className="w-full justify-end">
+                                <PaginationContent>
+                                    <PaginationItem>
+                                        <PaginationPrevious
+                                            href="#"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handlePrevPage();
+                                            }}
+                                        />
+                                    </PaginationItem>
+
+                                    {getVisiblePages().map((page) => (
+                                        <PaginationItem key={page}>
+                                            <PaginationLink
+                                                href="#"
+                                                isActive={currentPage === page}
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    setCurrentPage(page)
+                                                }}
+                                            >
+                                                {page}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    ))}
+
+                                    {currentPage < totalPages - 2 && (
+                                        <PaginationItem>
+                                            <PaginationEllipsis />
+                                        </PaginationItem>
+                                    )}
+
+                                    <PaginationItem>
+                                        <PaginationNext
+                                            href="#"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handleNextPage();
+                                            }}
+                                        />
+                                    </PaginationItem>
+                                </PaginationContent>
+                            </Pagination>
+                        </CardFooter>
                     </Card>
                 </div>
             </div>
