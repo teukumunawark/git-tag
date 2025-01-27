@@ -37,11 +37,11 @@ import {
 const formSchema = z.object({
     serviceName: z.string()
         .min(1, "Service name is required")
-        .regex(/^[a-zA-Z0-9- ]+$/, "Hanya huruf, angka, dan spasi")
+        .regex(/^[a-zA-Z0-9- ]+$/, "Service name can only contain letters, numbers, and hyphens")
         .transform(val => val.trim().replace(/\s+/g, '-').toLowerCase()),
     tag: z.string()
         .min(1, "Tag is required")
-        .regex(/^\d+\.\d+\.\d+$/, "Format versi: X.X.X (contoh: 1.0.0)"),
+        .regex(/^\d+\.\d+\.\d+$/, "Tag must be in format X.X.X"),
 });
 export default function Home() {
     const {toast} = useToast();
@@ -204,6 +204,7 @@ export default function Home() {
     };
 
     const paginatedFiles = recentFiles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     return (
         <div className="mx-auto px-4 lg:px-0">
             <header
