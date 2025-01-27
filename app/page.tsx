@@ -14,7 +14,6 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {ModeToggle} from "@/components/mode-toggle";
 import {useToast} from "@/hooks/use-toast"
 import {deleteFile, handleDownload, loadRecentFiles, RecentFile, saveFileToDirectory} from "@/services/fileService";
-import {ScrollArea} from "@/components/ui/scroll-area";
 
 const formSchema = z.object({
     serviceName: z.string().min(1, "Service name is required"),
