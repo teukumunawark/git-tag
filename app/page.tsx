@@ -162,7 +162,14 @@ export default function Home() {
     const handleDeleteFile = async (file: RecentFile) => {
         try {
             if (file.source === 'directory') {
-                if (!directoryHandle) throw new Error("Directory not selected");
+                if (!directoryHandle) {
+                    toast({
+                        title: "Deletion Failed",
+                        description: "Directory not selected",
+                        variant: "destructive",
+                    });
+                    return;
+                }
                 await directoryHandle.removeEntry(file.name);
             }
 
