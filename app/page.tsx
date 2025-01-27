@@ -85,7 +85,7 @@ export default function Home() {
                 description: "Your browser will automatically download files to default location",
             });
         }
-    }, []);
+    }, [toast]);
 
     const handleChooseDirectory = async () => {
         try {
