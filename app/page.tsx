@@ -5,7 +5,7 @@ import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {
     Download,
     Edit,
@@ -445,7 +445,7 @@ export default function Home() {
                                                     className="h-8 w-8 text-red-600 hover:bg-red-100/50"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleDeleteFile(file);
+                                                        handleDeleteFile(file).catch(console.error);
                                                     }}
                                                 >
                                                     <Trash className="h-4 w-4"/>
