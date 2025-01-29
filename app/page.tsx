@@ -304,37 +304,41 @@ export default function Home() {
                                         />
                                     </div>
 
-                                    <div className="mt-4 p-4 bg-muted/50 rounded">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <FileText className="h-4 w-4"/>
-                                            <span className="font-medium">Preview:</span>
-                                            <pre className="flex-1">
+                                    <div className="mt-4 p-4 bg-muted/50 flex items-center">
+                                        <div className="h-full w-full">
+                                            <div className="flex flex-wrap items-center gap-2 text-sm">
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <FileText className="h-4 w-4"/>
+                                                    <span className="font-medium hidden sm:inline">Preview:</span>
+                                                </div>
+                                                <pre className="flex-1 min-w-[200px] truncate break-words">
                                                 {serviceNameWatch || 'service-name'}:{tagWatch || '0.0.0'}
                                             </pre>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                type="button"
-                                                onClick={() => {
-                                                    form.reset({
-                                                        serviceName: "",
-                                                        tag: "",
-                                                    });
-                                                    toast({
-                                                        title: "Input Cleared",
-                                                        description: "Service name and tag cleared",
-                                                        className: "bg-yellow-500",
-                                                    });
-                                                }}
-                                            >
-                                                <Trash2
-                                                    className="h-4 w-4 mr-2"/>
-                                                Bersihkan
-                                            </Button>
+                                            </div>
+                                            <div className="mt-2 text-xs text-muted-foreground truncate">
+                                                Nama file: {fileNamePreview}
+                                            </div>
                                         </div>
-                                        <div className="mt-2 text-xs text-muted-foreground">
-                                            Nama file: {fileNamePreview}
-                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            type="button"
+                                            className="ml-auto sm:ml-0 gap-0 flex items-center hover:bg-primary/30"
+                                            onClick={() => {
+                                                form.reset({
+                                                    serviceName: "",
+                                                    tag: "",
+                                                });
+                                                toast({
+                                                    title: "Input Cleared",
+                                                    description: "Service name and tag cleared",
+                                                    className: "bg-yellow-500",
+                                                });
+                                            }}
+                                        >
+                                            <Trash2 className="sm:mr-2"/>
+                                            <span className="hidden sm:inline text-[0.775]">Clear Input</span>
+                                        </Button>
                                     </div>
 
                                     <div className="space-y-4">
@@ -456,77 +460,77 @@ export default function Home() {
                                     )
                                 })
                             ) : (
-                                <div className="space-y-3">
-                                    {Array(3)
-                                        .fill(0)
-                                        .map((_, i) => (
-                                            <Skeleton key={i} className="h-[62px] w-full rounded-lg"/>
-                                        ))}
-                                </div>
+                                <div></div>
                             )}
                         </CardContent>
-                        <CardFooter className="flex pt-2">
-                            <Input
-                                id="itemsPerPage"
-                                type="number"
-                                value={itemsPerPage}
-                                onChange={handleItemsPerPageChange}
-                                className="border p-2 rounded w-12"
-                                min={1}
-                            ></Input>
-                            <div className="w-4/6 ms-4">
-                                <span className="text-sm text-muted-foreground">
-                                    Showing {Math.min((currentPage - 1) * itemsPerPage + 1, recentFiles.length)} -{" "}
-                                    {Math.min(currentPage * itemsPerPage, recentFiles.length)} of {recentFiles.length} files
-                                </span>
+                        {recentFiles.length > 0
+                            ? <CardFooter className="flex pt-2">
+                                <Input
+                                    id="itemsPerPage"
+                                    type="number"
+                                    value={itemsPerPage}
+                                    onChange={handleItemsPerPageChange}
+                                    className="border p-2 rounded w-12"
+                                    min={1}
+                                ></Input>
+                                <div className="w-4/6 ms-4">
+                                 <span className="text-sm text-muted-foreground">
+                                     Showing {Math.min((currentPage - 1) * itemsPerPage + 1, recentFiles.length)} -{" "}
+                                     {Math.min(currentPage * itemsPerPage, recentFiles.length)} of {recentFiles.length} files
+                                 </span>
 
-                            </div>
+                                </div>
 
-                            <Pagination className="w-full justify-end">
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <PaginationPrevious
-                                            href="#"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                handlePrevPage();
-                                            }}
-                                        />
-                                    </PaginationItem>
-
-                                    {getVisiblePages().map((page) => (
-                                        <PaginationItem key={page}>
-                                            <PaginationLink
-                                                href="#"
-                                                isActive={currentPage === page}
-                                                onClick={(e) => {
-                                                    e.preventDefault()
-                                                    setCurrentPage(page)
-                                                }}
-                                            >
-                                                {page}
-                                            </PaginationLink>
-                                        </PaginationItem>
-                                    ))}
-
-                                    {currentPage < totalPages - 2 && (
+                                <Pagination className="w-full justify-end">
+                                    <PaginationContent>
                                         <PaginationItem>
-                                            <PaginationEllipsis/>
+                                            <PaginationPrevious
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handlePrevPage();
+                                                }}
+                                            />
                                         </PaginationItem>
-                                    )}
 
-                                    <PaginationItem>
-                                        <PaginationNext
-                                            href="#"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                handleNextPage();
-                                            }}
-                                        />
-                                    </PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
-                        </CardFooter>
+                                        {getVisiblePages().map((page) => (
+                                            <PaginationItem key={page}>
+                                                <PaginationLink
+                                                    href="#"
+                                                    isActive={currentPage === page}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setCurrentPage(page);
+                                                    }}
+                                                >
+                                                    {page}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        ))}
+
+                                        {currentPage < totalPages - 2 && (
+                                            <PaginationItem>
+                                                <PaginationEllipsis/>
+                                            </PaginationItem>
+                                        )}
+
+                                        <PaginationItem>
+                                            <PaginationNext
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handleNextPage();
+                                                }}
+                                            />
+                                        </PaginationItem>
+                                    </PaginationContent>
+                                </Pagination>
+                            </CardFooter>
+                            : <div>
+                                <CardContent className="text-center">
+                                    <p className="text-muted-foreground">No files generated yet</p>
+                                </CardContent>
+                            </div>}
                     </Card>
                 </div>
             </div>
