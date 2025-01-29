@@ -20,7 +20,6 @@ import {
 import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Separator} from "@/components/ui/separator";
-import {Skeleton} from "@/components/ui/skeleton";
 import {ModeToggle} from "@/components/mode-toggle";
 import {useToast} from "@/hooks/use-toast"
 import {deleteFile, handleDownload, loadRecentFiles, RecentFile, saveFileToDirectory} from "@/services/fileService";
