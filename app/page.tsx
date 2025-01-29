@@ -179,7 +179,7 @@ export default function Home() {
     const totalPages = Math.ceil(recentFiles.length / itemsPerPage);
 
     const getVisiblePages = () => {
-        const maxPages = 5;
+        const maxPages = 10;
         const startPage = Math.max(currentPage - Math.floor(maxPages / 2), 1);
         const endPage = Math.min(startPage + maxPages - 1, totalPages);
 
@@ -463,24 +463,24 @@ export default function Home() {
                             )}
                         </CardContent>
                         {recentFiles.length > 0
-                            ? <CardFooter className="flex pt-2">
-                                <Input
-                                    id="itemsPerPage"
-                                    type="number"
-                                    value={itemsPerPage}
-                                    onChange={handleItemsPerPageChange}
-                                    className="border p-2 rounded w-12"
-                                    min={1}
-                                ></Input>
-                                <div className="w-4/6 ms-4">
+                            ? <CardFooter className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 pt-2 w-full">
+
+                                <div className="w-full flex flex-col items-center gap-2 lg:flex-row lg:items-center">
+                                    <Input
+                                        id="itemsPerPage"
+                                        type="number"
+                                        value={itemsPerPage}
+                                        onChange={handleItemsPerPageChange}
+                                        className="border p-2 rounded w-12"
+                                        min={1}
+                                    ></Input>
                                  <span className="text-sm text-muted-foreground">
                                      Showing {Math.min((currentPage - 1) * itemsPerPage + 1, recentFiles.length)} -{" "}
                                      {Math.min(currentPage * itemsPerPage, recentFiles.length)} of {recentFiles.length} files
                                  </span>
-
                                 </div>
 
-                                <Pagination className="w-full justify-end">
+                                <Pagination className="w-full justify-center lg:justify-end">
                                     <PaginationContent>
                                         <PaginationItem>
                                             <PaginationPrevious
@@ -491,8 +491,9 @@ export default function Home() {
                                                 }}
                                             />
                                         </PaginationItem>
-
-                                        {getVisiblePages().map((page) => (
+                                        {getVisiblePages()
+                                            .slice(0, window.innerWidth < 640 ? 3 : 5)
+                                            .map((page) => (
                                             <PaginationItem key={page}>
                                                 <PaginationLink
                                                     href="#"
