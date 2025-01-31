@@ -125,7 +125,7 @@ export default function Home() {
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         const content = `${values.serviceName}:${values.tag}`;
-        const filename = `${values.serviceName}-${values.tag}.txt`;
+        const filename = `[RELEASE] ${values.serviceName}-${values.tag}.txt`;
 
         const isDuplicate = recentFiles.some(file =>
             file.name.toLowerCase() === filename.toLowerCase()
@@ -153,7 +153,6 @@ export default function Home() {
                 toast({
                     title: "File Saved",
                     description: `${filename} saved to ${directoryHandle.name}`,
-                    className: "bg-green-500",
                 })
             } catch (_error) {
                 toast({
@@ -308,14 +307,17 @@ export default function Home() {
                                             <div className="flex flex-wrap items-center gap-2 text-sm">
                                                 <div className="flex items-center gap-2 flex-shrink-0">
                                                     <FileText className="h-4 w-4"/>
-                                                    <span className="font-medium hidden sm:inline">Preview:</span>
+                                                    <span
+                                                        className="font-bold text-[13px] hidden sm:inline">Content:</span>
                                                 </div>
-                                                <pre className="flex-1 min-w-[200px] truncate break-words">
-                                                {serviceNameWatch || 'service-name'}:{tagWatch || '0.0.0'}
+                                                <pre className="flex-1 min-w-[200px] truncate">
+                                                {serviceNameWatch.toLowerCase() || 'service-name'}:{tagWatch || '0.0.0'}
                                             </pre>
                                             </div>
                                             <div className="mt-2 text-xs text-muted-foreground truncate">
-                                                Nama file: {fileNamePreview}
+                                                <span
+                                                    className="font-semibold text-[11px] hidden sm:inline">File Name: </span>
+                                                {fileNamePreview}
                                             </div>
                                         </div>
                                         <Button
@@ -331,7 +333,6 @@ export default function Home() {
                                                 toast({
                                                     title: "Input Cleared",
                                                     description: "Service name and tag cleared",
-                                                    className: "bg-yellow-500",
                                                 });
                                             }}
                                         >
@@ -408,14 +409,21 @@ export default function Home() {
                         <CardContent className="space-y-3  p-2 lg:p-4">
                             {recentFiles.length > 0 ? (
                                 paginatedFiles.map((file, index) => {
-                                    const serviceName = file.name.replace('.txt', '').split('-').slice(0, -1).join('-')
+
+                                    const serviceName = file.name
+                                        .replace(/\[RELEASE]\s*/, '')
+                                        .replace('.txt', '')
+                                        .replace(/-(\d+\.\d+\.\d+)$/, ':$1')
+
                                     const tag = file.name.replace('.txt', '').split('-').slice(-1).join('-')
+                                    const filePath = file.path.replace(/\[RELEASE]\s*/, "")
+
                                     return (
                                         <div
                                             key={index}
                                             className="group flex flex-col sm:flex-row items-start sm:items-center p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer lg:justify-between"
                                         >
-                                            <div className="space-y-1 w-full lg:w-auto">
+                                            <div className="space-y-1 lg:w-5/6">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-medium">
                                                         <span className="text-primary">
@@ -426,8 +434,8 @@ export default function Home() {
                                                         .txt
                                                     </Badge>
                                                 </div>
-                                                <p className="text-sm text-muted-foreground font-mono truncate">
-                                                    {file.path}
+                                                <p className="text-sm text-muted-foreground overflow-ellipsis font-mono truncate">
+                                                    {filePath}
                                                 </p>
                                             </div>
 
@@ -437,7 +445,13 @@ export default function Home() {
                                                     size="icon"
                                                     className="h-8 w-8 text-primary"
                                                     onClick={() => {
-                                                        form.setValue('serviceName', serviceName);
+                                                        form.setValue(
+                                                            'serviceName',
+                                                            file.name
+                                                                .replace(/\[RELEASE]\s*/, '')
+                                                                .replace('.txt', '')
+                                                                .replace(/-(\d+\.\d+\.\d+)$/, '')
+                                                        );
                                                         form.setValue('tag', tag);
                                                     }}
                                                 >
@@ -474,9 +488,9 @@ export default function Home() {
                                         className="border p-2 rounded w-12"
                                         min={1}
                                     ></Input>
-                                 <span className="text-sm text-muted-foreground">
+                                    <span className="text-sm text-muted-foreground">
                                      Showing {Math.min((currentPage - 1) * itemsPerPage + 1, recentFiles.length)} -{" "}
-                                     {Math.min(currentPage * itemsPerPage, recentFiles.length)} of {recentFiles.length} files
+                                        {Math.min(currentPage * itemsPerPage, recentFiles.length)} of {recentFiles.length} files
                                  </span>
                                 </div>
 
@@ -494,19 +508,19 @@ export default function Home() {
                                         {getVisiblePages()
                                             .slice(0, window.innerWidth < 640 ? 3 : 5)
                                             .map((page) => (
-                                            <PaginationItem key={page}>
-                                                <PaginationLink
-                                                    href="#"
-                                                    isActive={currentPage === page}
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        setCurrentPage(page);
-                                                    }}
-                                                >
-                                                    {page}
-                                                </PaginationLink>
-                                            </PaginationItem>
-                                        ))}
+                                                <PaginationItem key={page}>
+                                                    <PaginationLink
+                                                        href="#"
+                                                        isActive={currentPage === page}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            setCurrentPage(page);
+                                                        }}
+                                                    >
+                                                        {page}
+                                                    </PaginationLink>
+                                                </PaginationItem>
+                                            ))}
 
                                         {currentPage < totalPages - 2 && (
                                             <PaginationItem>
