@@ -255,7 +255,7 @@ export default function Home() {
                                                     <FormLabel className="flex items-center gap-2 text-primary/80">
                                                         Service Name
                                                         <span className="text-xs text-muted-foreground">
-                                                            (auto-format ke lowercase)
+                                                            (auto-format to lowercase)
                                                         </span>
                                                     </FormLabel>
                                                     <FormControl>
