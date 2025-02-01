@@ -30,19 +30,21 @@ interface RecentFilesProps {
 }
 
 export const RecentFiles: React.FC<RecentFilesProps> =
-    ({
-         recentFiles,
-         onDelete,
-         onChooseDirectory,
-         directoryHandle,
-         isApiSupported,
-         isProcessing,
-         itemsPerPage,
-         currentPage,
-         totalPages,
-         setItemsPerPage,
-         setCurrentPage,
-     }: RecentFilesProps) => {
+    (
+        {
+            recentFiles,
+            onDelete,
+            onChooseDirectory,
+            directoryHandle,
+            isApiSupported,
+            isProcessing,
+            itemsPerPage,
+            currentPage,
+            totalPages,
+            setItemsPerPage,
+            setCurrentPage,
+        }: RecentFilesProps
+    ) => {
         const getVisiblePages = (): number[] => {
             const maxPages = 10;
             const startPage = Math.max(currentPage - Math.floor(maxPages / 2), 1);
