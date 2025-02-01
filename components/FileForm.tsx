@@ -10,11 +10,12 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
-import {Download, FileText, Search, Tag, Trash2} from "lucide-react";
+import {ChevronDown, Download, FileText, Search, Tag, Trash2} from "lucide-react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import {Input} from "./ui/input";
 import {Button} from "@/components/ui/button";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 
 const formSchema = z.object({
     serviceName: z
@@ -30,6 +31,7 @@ export type FormValues = z.infer<typeof formSchema>;
 interface FileFormProps {
     onSubmit: (values: FormValues) => Promise<void>;
     isProcessing: boolean;
+    onReset?: () => void;
 }
 
 interface Repository {
@@ -42,7 +44,7 @@ interface Tag {
     env: string;
 }
 
-export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) => {
+export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onReset}) => {
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -58,12 +60,15 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
         .toLowerCase()}-${tagWatch || "0.0.0"}.txt`;
 
     const [repositorySuggestions, setRepositorySuggestions] = useState<Repository[]>([]);
-    const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
-    const [searchTerm, setSearchTerm] = useState("");
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+    const [showTagDropdown, setShowTagDropdown] = useState(false);
+    const [highlightedTagIndex, setHighlightedTagIndex] = useState(-1);
 
-    // Debounced fetch for repository suggestions
+
     useEffect(() => {
         const timeout = setTimeout(() => {
             if (searchTerm.trim().length > 0) {
@@ -86,7 +91,7 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
             }
             const data = await response.json();
             setRepositorySuggestions(data.data);
-            setShowSuggestions(true); // Show suggestions when data is fetched
+            setShowSuggestions(true);
         } catch (error) {
             console.error("Error fetching repository suggestions:", error);
         }
@@ -111,20 +116,11 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
         const rawValue = e.target.value;
         setSearchTerm(rawValue);
         const formatted = rawValue.replace(/[^a-zA-Z0-9 -]/g, "").replace(/\s+/g, " ").trim();
-        form.setValue("serviceName", formatted, { shouldValidate: true });
+        form.setValue("serviceName", formatted, {shouldValidate: true});
     };
 
     const handleServiceNameBlur = () => {
-        const currentValue = form.getValues("serviceName");
-        const selectedRepo = repositorySuggestions.find(
-            (repo) => repo.name.toLowerCase() === currentValue.toLowerCase()
-        );
-        if (selectedRepo) {
-            fetchTagSuggestions(selectedRepo.id);
-        } else {
-            setTagSuggestions([]);
-        }
-        setShowSuggestions(false); // Hide suggestions on blur
+        setTimeout(() => setShowSuggestions(false), 200);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -134,20 +130,57 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
             setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : repositorySuggestions.length - 1));
         } else if (e.key === "Enter" && highlightedIndex !== -1) {
             const selectedRepo = repositorySuggestions[highlightedIndex];
-            form.setValue("serviceName", selectedRepo.name, { shouldValidate: true });
+            form.setValue("serviceName", selectedRepo.name, {shouldValidate: true});
             setSearchTerm(selectedRepo.name);
-            setShowSuggestions(false); // Hide suggestions after selection
+            setShowSuggestions(false);
             fetchTagSuggestions(selectedRepo.id);
         } else if (e.key === "Escape") {
-            setShowSuggestions(false); // Hide suggestions on Escape key
+            setShowSuggestions(false);
         }
     };
 
     const handleSuggestionClick = (repo: Repository) => {
-        form.setValue("serviceName", repo.name, { shouldValidate: true });
+        form.setValue("serviceName", repo.name, {shouldValidate: true});
         setSearchTerm(repo.name);
-        setShowSuggestions(false); // Hide suggestions after selection
-        fetchTagSuggestions(repo.id);
+        setShowSuggestions(false);
+        setSelectedServiceId(repo.id);
+    };
+
+    const shouldShowSuggestions = (): boolean => {
+        return (
+            showSuggestions &&
+            searchTerm.trim().length > 0 &&
+            !repositorySuggestions.some(
+                (repo) => repo.name.toLowerCase() === searchTerm.trim().toLowerCase()
+            )
+        );
+    };
+
+    const handleTagKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "ArrowDown") {
+            setHighlightedTagIndex((prev) => (prev + 1) % tagSuggestions.length);
+        } else if (e.key === "ArrowUp") {
+            setHighlightedTagIndex((prev) =>
+                prev > 0 ? prev - 1 : tagSuggestions.length - 1
+            );
+        } else if (e.key === "Enter" && highlightedTagIndex !== -1) {
+            const selectedTag = tagSuggestions[highlightedTagIndex];
+            form.setValue("tag", selectedTag, {shouldValidate: true});
+            setShowTagDropdown(false);
+        } else if (e.key === "Escape") {
+            setShowTagDropdown(false);
+        }
+    };
+
+    // Handle click on a tag suggestion
+    const handleTagSuggestionClick = (tag: string) => {
+        form.setValue("tag", tag, {shouldValidate: true});
+        setShowTagDropdown(false);
+    };
+
+
+    const handleTagBlur = () => {
+        setTimeout(() => setShowTagDropdown(false), 200);
     };
 
     return (
@@ -155,7 +188,7 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
             <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-primary/10 rounded-lg">
-                        <FileText className="h-6 w-6 text-primary" />
+                        <FileText className="h-6 w-6 text-primary"/>
                     </div>
                     <div>
                         <CardTitle>Create New File</CardTitle>
@@ -163,7 +196,7 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                     </div>
                 </div>
             </CardHeader>
-            <Separator className="mb-6" />
+            <Separator className="mb-6"/>
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -172,15 +205,17 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                             <FormField
                                 control={form.control}
                                 name="serviceName"
-                                render={({ field }) => (
+                                render={({field}) => (
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2 text-primary/80">
                                             Service Name
-                                            <span className="text-xs text-muted-foreground">(auto-format to lowercase)</span>
+                                            <span
+                                                className="text-xs text-muted-foreground">(auto-format to lowercase)</span>
                                         </FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                                                <Search
+                                                    className="absolute left-4 top-[13.7px] h-5 w-5 text-muted-foreground"/>
                                                 <Input
                                                     {...field}
                                                     value={searchTerm}
@@ -191,10 +226,12 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                                                     onKeyDown={handleKeyDown}
                                                     onBlur={handleServiceNameBlur}
                                                     placeholder="Search services..."
-                                                    className="h-12 text-base pl-10"
+                                                    className="h-12 pl-12 uppercase"
+                                                    autoComplete="off"
                                                 />
-                                                {showSuggestions && repositorySuggestions.length > 0 && (
-                                                    <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                                                {shouldShowSuggestions() && repositorySuggestions.length > 0 && (
+                                                    <div
+                                                        className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
                                                         {repositorySuggestions.map((repo, index) => (
                                                             <div
                                                                 key={repo.id}
@@ -210,8 +247,9 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                                                 )}
                                             </div>
                                         </FormControl>
-                                        <FormMessage className="text-xs" />
-                                        <p className="text-xs text-muted-foreground mt-1">Start typing to see available services</p>
+                                        <FormMessage className="text-xs"/>
+                                        <p className="text-xs text-muted-foreground mt-1">Start typing to see available
+                                            services</p>
                                     </FormItem>
                                 )}
                             />
@@ -220,7 +258,7 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                             <FormField
                                 control={form.control}
                                 name="tag"
-                                render={({ field }) => (
+                                render={({field}) => (
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2 text-primary/80">
                                             Version Tag
@@ -228,23 +266,50 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                                         </FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                <Tag className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                                                <Input
-                                                    {...field}
-                                                    placeholder="Search versions..."
-                                                    className="h-12 text-base pl-10"
-                                                    list="tagSuggestions"
-                                                />
-                                                <datalist id="tagSuggestions" className="rounded-lg shadow-lg">
-                                                    {tagSuggestions.map((tag, i) => (
-                                                        <option key={i} value={tag} className="p-2 hover:bg-muted" />
-                                                    ))}
-                                                </datalist>
+                                                {/* Dropdown Button */}
+                                                <Popover open={showTagDropdown} onOpenChange={setShowTagDropdown}>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            className="w-full justify-between h-12 px-5"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                setShowTagDropdown(true);
+                                                            }}
+                                                            tabIndex={0}
+                                                        >
+                                                            {field.value || "Select a version..."}
+                                                            <ChevronDown
+                                                                className="ml-2 h-4 w-4 text-muted-foreground"/>
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent
+                                                        onBlur={handleTagBlur}
+                                                        onKeyDown={handleTagKeyDown}
+                                                        className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                        <div className="max-h-60 overflow-y-auto">
+                                                            {tagSuggestions.map((tag, index) => (
+                                                                <div
+                                                                    key={index}
+                                                                    onClick={() => handleTagSuggestionClick(tag)}
+                                                                    className={`px-4 py-2 cursor-pointer ${
+                                                                        highlightedTagIndex === index ? "bg-primary text-white" : ""
+                                                                    } hover:bg-gray-100`}
+                                                                >
+                                                                    {tag}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </PopoverContent>
+                                                </Popover>
                                             </div>
                                         </FormControl>
-                                        <FormMessage className="text-xs" />
+                                        <FormMessage className="text-xs"/>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {serviceNameWatch ? `Available versions for ${serviceNameWatch}` : "Select a service first"}
+                                            {selectedServiceId
+                                                ? `Available versions for service ${selectedServiceId}`
+                                                : "Select a service first"}
                                         </p>
                                     </FormItem>
                                 )}
@@ -256,12 +321,12 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                             <div className="h-full w-full">
                                 <div className="flex flex-wrap items-center gap-2 text-sm">
                                     <div className="flex items-center gap-2 flex-shrink-0">
-                                        <FileText className="h-4 w-4" />
+                                        <FileText className="h-4 w-4"/>
                                         <span className="font-bold text-[13px] hidden sm:inline">Content:</span>
                                     </div>
                                     <pre className="flex-1 min-w-[200px] truncate">
-                    {serviceNameWatch.toLowerCase() || "service-name"}:{tagWatch || "0.0.0"}
-                  </pre>
+                                        {serviceNameWatch.toLowerCase() || "service-name"}:{tagWatch || "0.0.0"}
+                                    </pre>
                                 </div>
                                 <div className="mt-2 text-xs text-muted-foreground truncate">
                                     <span className="font-semibold text-[11px] hidden sm:inline">File Name: </span>
@@ -280,7 +345,7 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                                     });
                                 }}
                             >
-                                <Trash2 className="sm:mr-2" />
+                                <Trash2 className="sm:mr-2"/>
                                 <span className="hidden sm:inline text-[0.775rem]">Clear Input</span>
                             </Button>
                         </div>
@@ -297,7 +362,7 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                                     <span>Generating...</span>
                                 ) : (
                                     <>
-                                        <Download className="h-5 w-5" />
+                                        <Download className="h-5 w-5"/>
                                         <span>Generate File</span>
                                     </>
                                 )}
@@ -307,7 +372,8 @@ export const FileForm: React.FC<FileFormProps> = ({ onSubmit, isProcessing }) =>
                 </Form>
             </CardContent>
         </Card>
-    );
+    )
+        ;
 };
 
 const highlightQuery = (text: string, query: string) => {
@@ -315,13 +381,11 @@ const highlightQuery = (text: string, query: string) => {
     return (
         <>
             {parts.map((part, i) =>
-                    part.toLowerCase() === query.toLowerCase() ? (
-                        <span key={i} className="font-bold text-primary">
-            {part}
-          </span>
-                    ) : (
-                        part
-                    )
+                part.toLowerCase() === query.toLowerCase() ? (
+                    <span key={i} className="font-bold ">{part}</span>
+                ) : (
+                    part
+                )
             )}
         </>
     );
