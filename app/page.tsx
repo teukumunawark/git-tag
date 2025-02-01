@@ -12,7 +12,6 @@ export default function Home() {
     const [isApiSupported, setIsApiSupported] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
-    const [serviceHistory, setServiceHistory] = useState<string[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(8);
 
@@ -86,10 +85,6 @@ export default function Home() {
                 setIsProcessing(true);
                 const newFile = await saveFileToDirectory(directoryHandle, filename, content);
                 setRecentFiles((prev) => [newFile, ...prev]);
-                setServiceHistory((prev) => {
-                    const newHistory = new Set([values.serviceName, ...prev]);
-                    return Array.from(newHistory);
-                });
                 toast({
                     title: "File Saved",
                     description: `${filename} saved to ${directoryHandle.name}`,
@@ -106,10 +101,6 @@ export default function Home() {
         } else {
             const newFile = handleDownload(filename, content);
             setRecentFiles((prev) => [newFile, ...prev]);
-            setServiceHistory((prev) => {
-                const newHistory = new Set([values.serviceName, ...prev]);
-                return Array.from(newHistory);
-            });
         }
     };
 
@@ -123,8 +114,6 @@ export default function Home() {
                     <FileForm
                         onSubmit={onSubmit}
                         isProcessing={isProcessing}
-                        serviceHistory={serviceHistory}
-                        setServiceHistory={setServiceHistory}
                     />
                     <RecentFiles
                         recentFiles={recentFiles}

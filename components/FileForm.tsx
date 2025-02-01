@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -10,11 +10,16 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 
 const formSchema = z.object({
-    serviceName: z.string()
+    serviceName: z
+        .string()
         .min(1, "Service name is required")
-        .regex(/^[a-zA-Z0-9- ]+$/, "Service name can only contain letters, numbers, and hyphens")
-        .transform(val => val.trim().replace(/\s+/g, '-').toLowerCase()),
-    tag: z.string()
+        .regex(
+            /^[a-zA-Z0-9- ]+$/,
+            "Service name can only contain letters, numbers, and hyphens"
+        )
+        .transform((val) => val.trim().replace(/\s+/g, "-").toLowerCase()),
+    tag: z
+        .string()
         .min(1, "Tag is required")
         .regex(/^\d+\.\d+\.\d+$/, "Tag must be in format X.X.X"),
 });
@@ -24,16 +29,23 @@ export type FormValues = z.infer<typeof formSchema>;
 interface FileFormProps {
     onSubmit: (values: FormValues) => Promise<void>;
     isProcessing: boolean;
-    serviceHistory: string[];
-    setServiceHistory: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+interface Repository {
+    id: number;
+    name: string;
+}
+
+interface Tag {
+    name: string;
+    env: string;
 }
 
 export const FileForm: React.FC<FileFormProps> =
     (
         {
             onSubmit,
-            isProcessing,
-            serviceHistory,
+            isProcessing
         }
     ) => {
         const form = useForm<FormValues>({
@@ -51,10 +63,65 @@ export const FileForm: React.FC<FileFormProps> =
             .replace(/\s+/g, "-")
             .toLowerCase()}-${tagWatch || "0.0.0"}.txt`;
 
+
+        const [repositorySuggestions, setRepositorySuggestions] = useState<Repository[]>([]);
+        const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+        const [searchTerm, setSearchTerm] = useState("");
+
+        useEffect(() => {
+            const timeout = setTimeout(() => {
+                if (searchTerm.trim().length > 0) {
+                    fetchRepositorySuggestions(searchTerm.trim()).then(() => console.log("Fetched repository suggestions"));
+                }
+            }, 500);
+            return () => clearTimeout(timeout);
+        }, [searchTerm]);
+
+        const fetchRepositorySuggestions = async (query: string) => {
+            try {
+                const response = await fetch(`http://localhost:8080/repository?search=${query}`);
+                if (!response.ok) {
+                    console.log("Failed to fetch repository suggestions");
+                }
+                const data = await response.json();
+                setRepositorySuggestions(data.data);
+            } catch (error) {
+                console.error("Error fetching repository suggestions:", error);
+            }
+        };
+
+        const fetchTagSuggestions = async (repoId: number) => {
+            try {
+                const response = await fetch(`http://localhost:8080/tag/${repoId}`);
+                if (!response.ok) {
+                    console.log("Failed to fetch tag suggestions");
+                }
+                const data = await response.json();
+                const tags = data.data.map((tagItem: Tag) => tagItem.name);
+                setTagSuggestions(tags);
+            } catch (error) {
+                console.error("Error fetching tag suggestions:", error);
+            }
+        };
+
+
         const handleServiceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             const rawValue = e.target.value;
+            setSearchTerm(rawValue);
             const formatted = rawValue.replace(/[^a-zA-Z0-9 -]/g, "").replace(/\s+/g, " ").trim();
             form.setValue("serviceName", formatted, {shouldValidate: true});
+        };
+
+        const handleServiceNameBlur = () => {
+            const currentValue = form.getValues("serviceName");
+            const selectedRepo = repositorySuggestions.find(
+                (repo) => repo.name.toLowerCase() === currentValue.toLowerCase()
+            );
+            if (selectedRepo) {
+                fetchTagSuggestions(selectedRepo.id).then(() => console.log("Fetched tag suggestions"));
+            } else {
+                setTagSuggestions([]);
+            }
         };
 
         return (
@@ -93,14 +160,18 @@ export const FileForm: React.FC<FileFormProps> =
                                                 <div className="relative">
                                                     <Input
                                                         {...field}
-                                                        onChange={handleServiceNameChange}
-                                                        placeholder="e.g. User Service"
+                                                        onChange={(e) => {
+                                                            handleServiceNameChange(e);
+                                                            field.onChange(e);
+                                                        }}
+                                                        onBlur={handleServiceNameBlur}
+                                                        placeholder="e.g. user-service"
                                                         className="h-12 text-base uppercase"
-                                                        list="serviceHistory"
+                                                        list="repositorySuggestions"
                                                     />
-                                                    <datalist id="serviceHistory">
-                                                        {serviceHistory.map((name, i) => (
-                                                            <option key={i} value={name}/>
+                                                    <datalist id="repositorySuggestions">
+                                                        {repositorySuggestions.map((repo) => (
+                                                            <option key={repo.id} value={repo.name}/>
                                                         ))}
                                                     </datalist>
                                                 </div>
@@ -120,11 +191,19 @@ export const FileForm: React.FC<FileFormProps> =
                                                 <span className="text-xs text-muted-foreground">(Format: X.X.X)</span>
                                             </FormLabel>
                                             <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    placeholder="e.g. 1.0.0"
-                                                    className="h-12 text-base"
-                                                />
+                                                <div className="relative">
+                                                    <Input
+                                                        {...field}
+                                                        placeholder="e.g. 1.0.0"
+                                                        className="h-12 text-base"
+                                                        list="tagSuggestions"
+                                                    />
+                                                    <datalist id="tagSuggestions">
+                                                        {tagSuggestions.map((tag, i) => (
+                                                            <option key={i} value={tag}/>
+                                                        ))}
+                                                    </datalist>
+                                                </div>
                                             </FormControl>
                                             <FormMessage className="text-xs"/>
                                         </FormItem>
@@ -137,18 +216,14 @@ export const FileForm: React.FC<FileFormProps> =
                                     <div className="flex flex-wrap items-center gap-2 text-sm">
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             <FileText className="h-4 w-4"/>
-                                            <span className="font-bold text-[13px] hidden sm:inline">
-                      Content:
-                    </span>
+                                            <span className="font-bold text-[13px] hidden sm:inline">Content:</span>
                                         </div>
-                                        <pre className="flex-1 min-w-[200px] truncate">
-                    {serviceNameWatch.toLowerCase() || "service-name"}:
-                                            {tagWatch || "0.0.0"}
-                  </pre>
+                                        <pre
+                                            className="flex-1 min-w-[200px] truncate">{serviceNameWatch.toLowerCase() || "service-name"}:{tagWatch || "0.0.0"}</pre>
                                     </div>
                                     <div className="mt-2 text-xs text-muted-foreground truncate">
-                  <span className="font-semibold text-[11px] hidden sm:inline">
-                    File Name:{" "} </span>
+                                        <span
+                                            className="font-semibold text-[11px] hidden sm:inline">File Name:{" "} </span>
                                         {fileNamePreview}
                                     </div>
                                 </div>
