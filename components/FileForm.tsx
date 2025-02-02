@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
-import {ChevronDown, Download, FileText, Search, Tag, Trash2} from "lucide-react";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {ChevronDown, Download, FileText, Search, Trash2,} from "lucide-react";
+import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import {Input} from "./ui/input";
 import {Button} from "@/components/ui/button";
@@ -14,9 +14,15 @@ const formSchema = z.object({
     serviceName: z
         .string()
         .min(1, "Service name is required")
-        .regex(/^[a-zA-Z0-9- ]+$/, "Service name can only contain letters, numbers, and hyphens")
+        .regex(
+            /^[a-zA-Z0-9- ]+$/,
+            "Service name can only contain letters, numbers, and hyphens"
+        )
         .transform((val) => val.trim().replace(/\s+/g, "-").toLowerCase()),
-    tag: z.string().min(1, "Tag is required").regex(/^\d+\.\d+\.\d+$/, "Tag must be in format X.X.X"),
+    tag: z
+        .string()
+        .min(1, "Tag is required")
+        .regex(/^\d+\.\d+\.\d+$/, "Tag must be in format X.X.X"),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -51,15 +57,21 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         .replace(/\s+/g, "-")
         .toLowerCase()}-${tagWatch || "0.0.0"}.txt`;
 
-    const [repositorySuggestions, setRepositorySuggestions] = useState<Repository[]>([]);
+    const [repositorySuggestions, setRepositorySuggestions] = useState<Repository[]>(
+        []
+    );
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [showSuggestions, setShowSuggestions] = useState(false);
+
     const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+
     const [showTagDropdown, setShowTagDropdown] = useState(false);
     const [highlightedTagIndex, setHighlightedTagIndex] = useState(-1);
 
+    const suggestionsRef = useRef<HTMLDivElement>(null);
+    const serviceInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -69,95 +81,134 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                 setRepositorySuggestions([]);
                 setShowSuggestions(false);
             }
-        }, 500);
-
+        }, 400);
         return () => clearTimeout(timeout);
     }, [searchTerm]);
 
+    // Close suggestions if user clicks outside the service name input or suggestions
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                suggestionsRef.current &&
+                !suggestionsRef.current.contains(event.target as Node) &&
+                serviceInputRef.current &&
+                !serviceInputRef.current.contains(event.target as Node)
+            ) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     const fetchRepositorySuggestions = async (query: string) => {
         try {
-            const response = await fetch(`http://localhost:8080/repository?search=${query}`);
-            if (!response.ok) {
-                console.log("Failed to fetch repository suggestions");
-                return;
-            }
+            const response = await fetch(
+                `http://localhost:8080/repository?search=${query}`
+            );
+            if (!response.ok) return;
             const data = await response.json();
-            setRepositorySuggestions(data.data);
+            // Filter out the exact match to prevent re-suggesting the currently selected item
+            const filtered = data.data.filter(
+                (repo: Repository) => repo.name.toLowerCase() !== query.toLowerCase()
+            );
+            setRepositorySuggestions(filtered);
             setShowSuggestions(true);
-        } catch (error) {
-            console.error("Error fetching repository suggestions:", error);
+        } catch (_) {
+            // handle errors as needed
         }
     };
 
     const fetchTagSuggestions = async (repoId: number) => {
         try {
             const response = await fetch(`http://localhost:8080/tag/${repoId}`);
-            if (!response.ok) {
-                console.log("Failed to fetch tag suggestions");
-                return;
-            }
+            if (!response.ok) return;
             const data = await response.json();
-            const tags = data.data.map((tagItem: Tag) => tagItem.name);
-            setTagSuggestions(tags);
-        } catch (error) {
-            console.error("Error fetching tag suggestions:", error);
+            setTagSuggestions(data.data.map((tagItem: Tag) => tagItem.name));
+        } catch (_) {
+            // handle errors as needed
         }
     };
 
     const handleServiceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawValue = e.target.value;
         setSearchTerm(rawValue);
-        const formatted = rawValue.replace(/[^a-zA-Z0-9 -]/g, "").replace(/\s+/g, " ").trim();
+        // sanitize input
+        const formatted = rawValue
+            .replace(/[^a-zA-Z0-9 -]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
         form.setValue("serviceName", formatted, {shouldValidate: true});
-    };
-
-    const handleServiceNameBlur = () => {
-        setTimeout(() => setShowSuggestions(false), 200);
+        // show suggestions if user is typing
+        if (formatted.length > 0 && repositorySuggestions.length > 0) {
+            setShowSuggestions(true);
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!repositorySuggestions.length) return;
+
         if (e.key === "ArrowDown") {
+            e.preventDefault();
             setHighlightedIndex((prev) => (prev + 1) % repositorySuggestions.length);
         } else if (e.key === "ArrowUp") {
-            setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : repositorySuggestions.length - 1));
+            e.preventDefault();
+            setHighlightedIndex((prev) =>
+                prev > 0 ? prev - 1 : repositorySuggestions.length - 1
+            );
         } else if (e.key === "Enter" && highlightedIndex !== -1) {
+            e.preventDefault();
             const selectedRepo = repositorySuggestions[highlightedIndex];
-            form.setValue("serviceName", selectedRepo.name, {shouldValidate: true});
-            setSearchTerm(selectedRepo.name);
-            setShowSuggestions(false);
-            fetchTagSuggestions(selectedRepo.id);
+            selectRepository(selectedRepo);
         } else if (e.key === "Escape") {
             setShowSuggestions(false);
         }
     };
 
-    const handleSuggestionClick = (repo: Repository) => {
+    const selectRepository = (repo: Repository) => {
         form.setValue("serviceName", repo.name, {shouldValidate: true});
         setSearchTerm(repo.name);
         setShowSuggestions(false);
         setSelectedServiceId(repo.id);
+        fetchTagSuggestions(repo.id);
+    };
+
+    const handleSuggestionClick = (repo: Repository) => {
+        selectRepository(repo);
+    };
+
+    const handleServiceNameFocus = () => {
+        if (searchTerm.trim().length > 0 && repositorySuggestions.length > 0) {
+            setShowSuggestions(true);
+        }
     };
 
     const shouldShowSuggestions = (): boolean => {
         return (
             showSuggestions &&
             searchTerm.trim().length > 0 &&
-            !repositorySuggestions.some(
-                (repo) => repo.name.toLowerCase() === searchTerm.trim().toLowerCase()
-            )
+            repositorySuggestions.length > 0
         );
     };
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!tagSuggestions.length) return;
+
         if (e.key === "ArrowDown") {
+            e.preventDefault();
             setHighlightedTagIndex((prev) => (prev + 1) % tagSuggestions.length);
         } else if (e.key === "ArrowUp") {
+            e.preventDefault();
             setHighlightedTagIndex((prev) =>
                 prev > 0 ? prev - 1 : tagSuggestions.length - 1
             );
         } else if (e.key === "Enter" && highlightedTagIndex !== -1) {
-            const selectedTag = tagSuggestions[highlightedTagIndex];
-            form.setValue("tag", selectedTag, {shouldValidate: true});
+            e.preventDefault();
+            form.setValue("tag", tagSuggestions[highlightedTagIndex], {
+                shouldValidate: true,
+            });
             setShowTagDropdown(false);
         } else if (e.key === "Escape") {
             setShowTagDropdown(false);
@@ -169,14 +220,21 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         setShowTagDropdown(false);
     };
 
-
     const handleTagBlur = () => {
+        // Delay to allow clicks on dropdown items
         setTimeout(() => setShowTagDropdown(false), 200);
     };
 
     const handleFormSubmit = async (values: FormValues) => {
         await onSubmit(values);
+        // Reset the form
         form.reset();
+        // Also reset the selected repository so user must re-select if needed
+        setSelectedServiceId(null);
+        // Clear tag suggestions
+        setTagSuggestions([]);
+        // Close the tag dropdown
+        setShowTagDropdown(false);
     };
 
     return (
@@ -188,7 +246,9 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                     </div>
                     <div>
                         <CardTitle>Create New File</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">Enter service details to generate file</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Enter service details to generate file
+                        </p>
                     </div>
                 </div>
             </CardHeader>
@@ -205,34 +265,39 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2 text-primary/80">
                                             Service Name
-                                            <span
-                                                className="text-xs text-muted-foreground">(auto-format to lowercase)</span>
+                                            <span className="text-xs text-muted-foreground">
+                        (auto-format to lowercase)
+                      </span>
                                         </FormLabel>
                                         <FormControl>
-                                            <div className="relative">
+                                            <div className="relative" ref={suggestionsRef}>
                                                 <Search
                                                     className="absolute left-4 top-[13.7px] h-5 w-5 text-muted-foreground"/>
                                                 <Input
                                                     {...field}
+                                                    ref={serviceInputRef}
                                                     onChange={(e) => {
                                                         handleServiceNameChange(e);
                                                         field.onChange(e);
                                                     }}
                                                     onKeyDown={handleKeyDown}
-                                                    onBlur={handleServiceNameBlur}
+                                                    onFocus={handleServiceNameFocus}
                                                     placeholder="Search services..."
                                                     className="h-12 pl-12 uppercase"
                                                     autoComplete="off"
                                                 />
-                                                {shouldShowSuggestions() && repositorySuggestions.length > 0 && (
+                                                {shouldShowSuggestions() && (
                                                     <div
-                                                        className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                                                        className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+                                                    >
                                                         {repositorySuggestions.map((repo, index) => (
                                                             <div
                                                                 key={repo.id}
-                                                                onClick={() => handleSuggestionClick(repo)}
+                                                                onMouseDown={() => handleSuggestionClick(repo)}
                                                                 className={`px-4 py-2 cursor-pointer ${
-                                                                    highlightedIndex === index ? "bg-primary text-white" : ""
+                                                                    highlightedIndex === index
+                                                                        ? "bg-primary text-white"
+                                                                        : ""
                                                                 } hover:bg-gray-100`}
                                                             >
                                                                 {highlightQuery(repo.name, searchTerm)}
@@ -243,9 +308,9 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                             </div>
                                         </FormControl>
                                         <FormMessage className="text-xs"/>
-                                        <p className="text-xs text-muted-foreground mt-1">Start typing to see
-                                            available
-                                            services</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Start typing to see available services
+                                        </p>
                                     </FormItem>
                                 )}
                             />
@@ -258,22 +323,39 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2 text-primary/80">
                                             Version Tag
-                                            <span className="text-xs text-muted-foreground">(Format: X.X.X)</span>
+                                            <span className="text-xs text-muted-foreground">
+                        (Format: X.X.X)
+                      </span>
                                         </FormLabel>
                                         <FormControl>
                                             <div className="relative">
-                                                {/* Dropdown Button */}
-                                                <Popover open={showTagDropdown} onOpenChange={setShowTagDropdown}>
+                                                <Popover
+                                                    open={selectedServiceId !== null && showTagDropdown}
+                                                    onOpenChange={(open) => {
+                                                        // Only allow opening if a service is selected
+                                                        if (selectedServiceId) {
+                                                            setShowTagDropdown(open);
+                                                        } else {
+                                                            setShowTagDropdown(false);
+                                                        }
+                                                    }}
+                                                >
                                                     <PopoverTrigger asChild>
                                                         <Button
                                                             variant="outline"
                                                             role="combobox"
-                                                            className={`w-full justify-between h-12 px-5 ${field.value !== "" ? "text-primary" : "text-muted-foreground"}`}
+                                                            className={`w-full justify-between h-12 px-5 ${
+                                                                field.value !== ""
+                                                                    ? "text-primary"
+                                                                    : "text-muted-foreground"
+                                                            } ${!selectedServiceId ? "opacity-50 cursor-not-allowed" : ""}`}
                                                             onClick={(e) => {
                                                                 e.preventDefault();
+                                                                if (!selectedServiceId) return;
                                                                 setShowTagDropdown(true);
                                                             }}
                                                             tabIndex={0}
+                                                            disabled={!selectedServiceId}
                                                         >
                                                             {field.value || "SELECT A VERSION"}
                                                             <ChevronDown
@@ -283,14 +365,17 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                     <PopoverContent
                                                         onBlur={handleTagBlur}
                                                         onKeyDown={handleTagKeyDown}
-                                                        className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                        className="w-[var(--radix-popover-trigger-width)] p-0"
+                                                    >
                                                         <div className="max-h-60 overflow-y-auto">
                                                             {tagSuggestions.map((tag, index) => (
                                                                 <div
                                                                     key={index}
-                                                                    onClick={() => handleTagSuggestionClick(tag)}
+                                                                    onMouseDown={() => handleTagSuggestionClick(tag)}
                                                                     className={`px-4 py-2 cursor-pointer ${
-                                                                        highlightedTagIndex === index ? "bg-primary text-white" : ""
+                                                                        highlightedTagIndex === index
+                                                                            ? "bg-primary text-white"
+                                                                            : ""
                                                                     } hover:bg-gray-100`}
                                                                 >
                                                                     {tag}
@@ -321,8 +406,8 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                         <span className="font-bold text-[13px] hidden sm:inline">Content:</span>
                                     </div>
                                     <pre className="flex-1 min-w-[200px] truncate">
-                                        {serviceNameWatch.toLowerCase() || "service-name"}:{tagWatch || "0.0.0"}
-                                    </pre>
+                    {serviceNameWatch.toLowerCase() || "service-name"}:{tagWatch || "0.0.0"}
+                  </pre>
                                 </div>
                                 <div className="mt-2 text-xs text-muted-foreground truncate">
                                     <span className="font-semibold text-[11px] hidden sm:inline">File Name: </span>
@@ -334,7 +419,12 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                 size="sm"
                                 type="button"
                                 className="ml-auto sm:ml-0 gap-0 flex items-center hover:bg-primary/30"
-                                onClick={() => form.reset()}
+                                onClick={() => {
+                                    form.reset();
+                                    setSelectedServiceId(null);
+                                    setTagSuggestions([]);
+                                    setShowTagDropdown(false);
+                                }}
                             >
                                 <Trash2 className="sm:mr-2"/>
                                 <span className="hidden sm:inline text-[0.775rem]">Clear Input</span>
@@ -366,16 +456,19 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     );
 };
 
+// highlight matched query
 const highlightQuery = (text: string, query: string) => {
     const parts = text.split(new RegExp(`(${query})`, "gi"));
     return (
         <>
             {parts.map((part, i) =>
-                part.toLowerCase() === query.toLowerCase() ? (
-                    <span key={i} className="font-bold ">{part}</span>
-                ) : (
-                    part
-                )
+                    part.toLowerCase() === query.toLowerCase() ? (
+                        <span key={i} className="font-bold">
+            {part}
+          </span>
+                    ) : (
+                        part
+                    )
             )}
         </>
     );
