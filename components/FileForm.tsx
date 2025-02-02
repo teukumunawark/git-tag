@@ -85,7 +85,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         return () => clearTimeout(timeout);
     }, [searchTerm]);
 
-    // Close suggestions if user clicks outside the service name input or suggestions
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -110,14 +109,13 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             );
             if (!response.ok) return;
             const data = await response.json();
-            // Filter out the exact match to prevent re-suggesting the currently selected item
             const filtered = data.data.filter(
                 (repo: Repository) => repo.name.toLowerCase() !== query.toLowerCase()
             );
             setRepositorySuggestions(filtered);
             setShowSuggestions(true);
         } catch (_) {
-            // handle errors as needed
+            console.log("Error fetching repository suggestions");
         }
     };
 
@@ -128,20 +126,18 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             const data = await response.json();
             setTagSuggestions(data.data.map((tagItem: Tag) => tagItem.name));
         } catch (_) {
-            // handle errors as needed
+            console.log("Error fetching tag suggestions");
         }
     };
 
     const handleServiceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawValue = e.target.value;
         setSearchTerm(rawValue);
-        // sanitize input
         const formatted = rawValue
             .replace(/[^a-zA-Z0-9 -]/g, "")
             .replace(/\s+/g, " ")
             .trim();
         form.setValue("serviceName", formatted, {shouldValidate: true});
-        // show suggestions if user is typing
         if (formatted.length > 0 && repositorySuggestions.length > 0) {
             setShowSuggestions(true);
         }
@@ -221,19 +217,14 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     };
 
     const handleTagBlur = () => {
-        // Delay to allow clicks on dropdown items
         setTimeout(() => setShowTagDropdown(false), 200);
     };
 
     const handleFormSubmit = async (values: FormValues) => {
         await onSubmit(values);
-        // Reset the form
         form.reset();
-        // Also reset the selected repository so user must re-select if needed
         setSelectedServiceId(null);
-        // Clear tag suggestions
         setTagSuggestions([]);
-        // Close the tag dropdown
         setShowTagDropdown(false);
     };
 
@@ -332,7 +323,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                 <Popover
                                                     open={selectedServiceId !== null && showTagDropdown}
                                                     onOpenChange={(open) => {
-                                                        // Only allow opening if a service is selected
                                                         if (selectedServiceId) {
                                                             setShowTagDropdown(open);
                                                         } else {
@@ -456,7 +446,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     );
 };
 
-// highlight matched query
 const highlightQuery = (text: string, query: string) => {
     const parts = text.split(new RegExp(`(${query})`, "gi"));
     return (
