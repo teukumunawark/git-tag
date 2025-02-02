@@ -14,7 +14,10 @@ const formSchema = z.object({
     serviceName: z
         .string()
         .min(1, "Service name is required")
-        .regex(/^[a-zA-Z0-9- ]+$/, "Service name can only contain letters, numbers, and hyphens")
+        .regex(
+            /^[a-zA-Z0-9- ]+$/,
+            "Service name can only contain letters, numbers, and hyphens"
+        )
         .transform((val) => val.trim().replace(/\s+/g, "-").toLowerCase()),
     tag: z
         .string()
@@ -51,19 +54,34 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     const serviceNameWatch = form.watch("serviceName");
     const tagWatch = form.watch("tag");
 
-    const fileNamePreview = `${(serviceNameWatch || "service-name").replace(/\s+/g, "-").toLowerCase()}-${tagWatch || "0.0.0"}.txt`;
+    const fileNamePreview = `${(serviceNameWatch || "service-name")
+        .replace(/\s+/g, "-")
+        .toLowerCase()}-${tagWatch || "0.0.0"}.txt`;
 
-    const [repositorySuggestions, setRepositorySuggestions] = useState<Repository[]>([]);
+    const [repositorySuggestions, setRepositorySuggestions] = useState<Repository[]>(
+        []
+    );
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+    const [selectedServiceId, setSelectedServiceId] = useState<number | null>(
+        null
+    );
     const [originalTag, setOriginalTag] = useState<string>("");
     const [showTagDropdown, setShowTagDropdown] = useState(false);
     const [highlightedTagIndex, setHighlightedTagIndex] = useState(-1);
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const serviceInputRef = useRef<HTMLInputElement>(null);
+
+    const [baseURL, setBaseURL] = useState("http://localhost:8080");
+
+    useEffect(() => {
+        const storedURL = typeof window !== "undefined" ? localStorage.getItem("baseURL") : null;
+        if (storedURL) {
+            setBaseURL(storedURL);
+        }
+    }, []);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -96,10 +114,12 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
 
     const fetchRepositorySuggestions = async (query: string) => {
         try {
-            const response = await fetch(`http://localhost:8080/repository?search=${query}`);
+            const response = await fetch(`${baseURL}/repository?search=${query}`);
             if (!response.ok) return;
             const data = await response.json();
-            const filtered = data.data.filter((repo: Repository) => repo.name.toLowerCase() !== query.toLowerCase());
+            const filtered = data.data.filter(
+                (repo: Repository) => repo.name.toLowerCase() !== query.toLowerCase()
+            );
             setRepositorySuggestions(filtered);
             setShowSuggestions(true);
         } catch (_) {
@@ -108,7 +128,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
 
     const fetchTagSuggestions = async (repoId: number) => {
         try {
-            const response = await fetch(`http://localhost:8080/tag/${repoId}`);
+            const response = await fetch(`${baseURL}/tag/${repoId}`);
             if (!response.ok) return;
             const data = await response.json();
             setTagSuggestions(data.data);
@@ -119,7 +139,10 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     const handleServiceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawValue = e.target.value;
         setSearchTerm(rawValue);
-        const formatted = rawValue.replace(/[^a-zA-Z0-9 -]/g, "").replace(/\s+/g, " ").trim();
+        const formatted = rawValue
+            .replace(/[^a-zA-Z0-9 -]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
         form.setValue("serviceName", formatted, {shouldValidate: true});
         if (formatted.length > 0 && repositorySuggestions.length > 0) {
             setShowSuggestions(true);
@@ -133,7 +156,9 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             setHighlightedIndex((prev) => (prev + 1) % repositorySuggestions.length);
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : repositorySuggestions.length - 1));
+            setHighlightedIndex((prev) =>
+                prev > 0 ? prev - 1 : repositorySuggestions.length - 1
+            );
         } else if (e.key === "Enter" && highlightedIndex !== -1) {
             e.preventDefault();
             const selectedRepo = repositorySuggestions[highlightedIndex];
@@ -162,13 +187,11 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     };
 
     const shouldShowSuggestions = (): boolean => {
-        return showSuggestions && searchTerm.trim().length > 0 && repositorySuggestions.length > 0;
-    };
-
-    const compareVersionValue = (versionStr: string): number | undefined => {
-        const version = parseVersion(versionStr);
-        if (!version) return undefined;
-        return version.major * 10000 + version.minor * 100 + version.patch;
+        return (
+            showSuggestions &&
+            searchTerm.trim().length > 0 &&
+            repositorySuggestions.length > 0
+        );
     };
 
     function parseVersion(fieldValue: string) {
@@ -180,6 +203,12 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         const patch = parseInt(match[3], 10);
         return {major, minor, patch};
     }
+
+    const compareVersionValue = (versionStr: string): number | undefined => {
+        const version = parseVersion(versionStr);
+        if (!version) return undefined;
+        return version.major * 10000 + version.minor * 100 + version.patch;
+    };
 
     const handleTagSuggestionClick = (tagItem: Tag) => {
         form.setValue("tag", tagItem.name, {shouldValidate: true});
@@ -236,7 +265,9 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             setHighlightedTagIndex((prev) => (prev + 1) % tagSuggestions.length);
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            setHighlightedTagIndex((prev) => (prev > 0 ? prev - 1 : tagSuggestions.length - 1));
+            setHighlightedTagIndex((prev) =>
+                prev > 0 ? prev - 1 : tagSuggestions.length - 1
+            );
         } else if (e.key === "Enter" && highlightedTagIndex !== -1) {
             e.preventDefault();
             const chosenTag = tagSuggestions[highlightedTagIndex];
@@ -262,7 +293,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     };
 
     return (
-        <Card className="shadow-lg hover:shadow-xl transition-shadow h-fit">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow h-fit bg-card text-card-foreground">
             <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-primary/10 rounded-lg">
@@ -286,7 +317,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                 name="serviceName"
                                 render={({field}) => (
                                     <FormItem>
-                                        <FormLabel className="flex items-center gap-2 text-primary/80">
+                                        <FormLabel className="flex items-center gap-2 text-foreground/80">
                                             Service Name
                                             <span className="text-xs text-muted-foreground">
                         (auto-format to lowercase)
@@ -295,7 +326,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                         <FormControl>
                                             <div className="relative" ref={suggestionsRef}>
                                                 <Search
-                                                    className="absolute left-4 top-[13.7px] h-5 w-5 text-muted-foreground"/>
+                                                    className="absolute left-4 top-[13px] h-5 w-5 text-muted-foreground"/>
                                                 <Input
                                                     {...field}
                                                     ref={serviceInputRef}
@@ -311,12 +342,14 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                 />
                                                 {shouldShowSuggestions() && (
                                                     <div
-                                                        className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                                                        className="absolute z-10 w-full mt-2 bg-popover text-popover-foreground border border-border rounded-lg shadow-md overflow-hidden">
                                                         {repositorySuggestions.map((repo, index) => (
                                                             <div
                                                                 key={repo.id}
                                                                 onMouseDown={() => handleSuggestionClick(repo)}
-                                                                className={`px-4 py-2 cursor-pointer ${highlightedIndex === index ? "bg-primary text-white" : ""} hover:bg-gray-100`}
+                                                                className={`px-4 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                                                                    highlightedIndex === index ? "bg-accent text-accent-foreground" : ""
+                                                                }`}
                                                             >
                                                                 {highlightQuery(repo.name, searchTerm)}
                                                             </div>
@@ -332,12 +365,13 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                     </FormItem>
                                 )}
                             />
+
                             <FormField
                                 control={form.control}
                                 name="tag"
                                 render={({field}) => (
                                     <FormItem>
-                                        <FormLabel className="flex items-center gap-2 text-primary/80">
+                                        <FormLabel className="flex items-center gap-2 text-foreground/80">
                                             Version Tag
                                             <span className="text-xs text-muted-foreground">
                         (Format: X.X.X)
@@ -360,7 +394,13 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                             <Button
                                                                 variant="outline"
                                                                 role="combobox"
-                                                                className={`w-full justify-between h-12 px-5 ${field.value !== "" ? "text-primary" : "text-muted-foreground"} ${!selectedServiceId ? "opacity-50 cursor-not-allowed" : ""}`}
+                                                                className={`w-full justify-between h-12 px-5 ${
+                                                                    field.value !== "" ? "text-foreground" : "text-muted-foreground"
+                                                                } ${
+                                                                    !selectedServiceId
+                                                                        ? "opacity-50 cursor-not-allowed"
+                                                                        : ""
+                                                                }`}
                                                                 onClick={(e) => {
                                                                     e.preventDefault();
                                                                     if (!selectedServiceId) return;
@@ -377,14 +417,18 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                         <PopoverContent
                                                             onBlur={handleTagBlur}
                                                             onKeyDown={handleTagKeyDown}
-                                                            className="w-[var(--radix-popover-trigger-width)] p-0"
+                                                            className="w-[var(--radix-popover-trigger-width)] p-0 bg-popover text-popover-foreground border border-border"
                                                         >
                                                             <div className="max-h-60 overflow-y-auto">
                                                                 {tagSuggestions.map((tagItem, index) => (
                                                                     <div
                                                                         key={index}
                                                                         onMouseDown={() => handleTagSuggestionClick(tagItem)}
-                                                                        className={`px-4 py-2 cursor-pointer ${highlightedTagIndex === index ? "bg-primary text-white" : ""} hover:bg-gray-100`}
+                                                                        className={`px-4 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                                                                            highlightedTagIndex === index
+                                                                                ? "bg-accent text-accent-foreground"
+                                                                                : ""
+                                                                        }`}
                                                                     >
                                                                         {`${tagItem.env}/${tagItem.name}`}
                                                                     </div>
@@ -395,7 +439,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <Button
-                                                        className="bg-black text-white hover:bg-black/90 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1"
+                                                        variant="secondary"
                                                         type="button"
                                                         size="sm"
                                                         onClick={() => {
@@ -414,13 +458,15 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                         disabled={!selectedServiceId}
                                                     />
                                                     <Button
-                                                        className="bg-black text-white hover:bg-black/90 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1"
+                                                        variant="secondary"
                                                         type="button"
                                                         size="sm"
                                                         onClick={() => {
                                                             const updated = incrementPatch(field.value);
                                                             const newValNum = compareVersionValue(updated);
-                                                            const origValNum = originalTag ? compareVersionValue(originalTag) : undefined;
+                                                            const origValNum = originalTag
+                                                                ? compareVersionValue(originalTag)
+                                                                : undefined;
                                                             if (newValNum && origValNum && newValNum < origValNum) {
                                                                 field.onChange(originalTag);
                                                             } else {
@@ -436,13 +482,16 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                         </FormControl>
                                         <FormMessage className="text-xs"/>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {selectedServiceId ? `Available versions for service ${selectedServiceId} (Pick +/ - to edit patch, or edit manually)` : "Select a service first"}
+                                            {selectedServiceId
+                                                ? `Available versions for service ${selectedServiceId} (Pick +/ - to edit patch, or edit manually)`
+                                                : "Select a service first"}
                                         </p>
                                     </FormItem>
                                 )}
                             />
                         </div>
-                        <div className="mt-4 p-4 bg-muted/50 flex items-center">
+
+                        <div className="mt-4 p-4 bg-secondary flex items-center">
                             <div className="h-full w-full">
                                 <div className="flex flex-wrap items-center gap-2 text-sm">
                                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -475,6 +524,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                 <span className="hidden sm:inline text-[0.775rem]">Clear Input</span>
                             </Button>
                         </div>
+
                         <div className="space-y-4">
                             <Button
                                 type="submit"
@@ -499,7 +549,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     );
 };
 
-const highlightQuery = (text: string, query: string) => {
+function highlightQuery(text: string, query: string) {
     const parts = text.split(new RegExp(`(${query})`, "gi"));
     return (
         <>
@@ -514,4 +564,4 @@ const highlightQuery = (text: string, query: string) => {
             )}
         </>
     );
-};
+}
