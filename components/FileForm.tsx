@@ -8,7 +8,7 @@ import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import {Input} from "./ui/input";
 import {Button} from "@/components/ui/button";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
 
 const formSchema = z.object({
     serviceName: z
@@ -42,7 +42,9 @@ interface Tag {
     env: string;
 }
 
+
 export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
+
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -53,6 +55,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
 
     const serviceNameWatch = form.watch("serviceName");
     const tagWatch = form.watch("tag");
+
     const fileNamePreview = `${(serviceNameWatch || "service-name")
         .replace(/\s+/g, "-")
         .toLowerCase()}-${tagWatch || "0.0.0"}.txt`;
@@ -63,15 +66,19 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+    const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
+
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+
+    const [originalTag, setOriginalTag] = useState<string>("");
 
     const [showTagDropdown, setShowTagDropdown] = useState(false);
     const [highlightedTagIndex, setHighlightedTagIndex] = useState(-1);
 
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const serviceInputRef = useRef<HTMLInputElement>(null);
+
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -115,7 +122,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             setRepositorySuggestions(filtered);
             setShowSuggestions(true);
         } catch (_) {
-            console.log("Error fetching repository suggestions");
         }
     };
 
@@ -124,11 +130,11 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             const response = await fetch(`http://localhost:8080/tag/${repoId}`);
             if (!response.ok) return;
             const data = await response.json();
-            setTagSuggestions(data.data.map((tagItem: Tag) => tagItem.name));
+            setTagSuggestions(data.data);
         } catch (_) {
-            console.log("Error fetching tag suggestions");
         }
     };
+
 
     const handleServiceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const rawValue = e.target.value;
@@ -137,6 +143,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             .replace(/[^a-zA-Z0-9 -]/g, "")
             .replace(/\s+/g, " ")
             .trim();
+
         form.setValue("serviceName", formatted, {shouldValidate: true});
         if (formatted.length > 0 && repositorySuggestions.length > 0) {
             setShowSuggestions(true);
@@ -189,6 +196,90 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         );
     };
 
+    const compareVersionValue = (versionStr: string): number | undefined => {
+        const match = versionStr.match(/^(\d+)\.(\d+)\.(\d+)$/);
+        if (!match) return undefined;
+        const major = parseInt(match[1]);
+        const minor = parseInt(match[2]);
+        const patch = parseInt(match[3]);
+        return major * 10000 + minor * 100 + patch;
+    };
+
+    const handleTagSuggestionClick = (tagItem: Tag) => {
+        form.setValue("tag", tagItem.name, {shouldValidate: true});
+        setOriginalTag(tagItem.name);
+        setShowTagDropdown(false);
+    };
+
+    const handleTagManualChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        field: { onChange: (val: string) => void; value: string }
+    ) => {
+        const newVal = e.target.value;
+        field.onChange(newVal);
+        if (!originalTag) return;
+        const newValNum = compareVersionValue(newVal);
+        const origValNum = compareVersionValue(originalTag);
+
+        if (!newValNum || !origValNum) {
+            return;
+        }
+
+        if (newValNum < origValNum) {
+            field.onChange(originalTag);
+        }
+    };
+
+    const incrementPatch = (fieldValue: string) => {
+        if (!fieldValue) return "";
+        const valNum = compareVersionValue(fieldValue);
+        if (!valNum) {
+            return fieldValue;
+        }
+
+        const match = fieldValue.match(/^(\d+)\.(\d+)\.(\d+)$/);
+        if (!match) return fieldValue;
+        let major = parseInt(match[1]);
+        let minor = parseInt(match[2]);
+        let patch = parseInt(match[3]);
+
+        patch++;
+        const newVersion = `${major}.${minor}.${patch}`;
+
+        return newVersion;
+    };
+
+    const decrementPatch = (fieldValue: string) => {
+        if (!fieldValue) return "";
+
+        const valNum = compareVersionValue(fieldValue);
+        if (!valNum) {
+            return fieldValue;
+        }
+
+        const match = fieldValue.match(/^(\d+)\.(\d+)\.(\d+)$/);
+        if (!match) return fieldValue;
+
+        let major = parseInt(match[1]);
+        let minor = parseInt(match[2]);
+        let patch = parseInt(match[3]);
+
+        if (patch > 0) {
+            patch--;
+        }
+
+        let newVersion = `${major}.${minor}.${patch}`;
+
+        const newValNum = compareVersionValue(newVersion);
+        const origValNum = originalTag ? compareVersionValue(originalTag) : 0;
+
+        if (origValNum && newValNum && newValNum < origValNum) {
+            return originalTag;
+        }
+
+        return newVersion;
+    };
+
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (!tagSuggestions.length) return;
 
@@ -202,18 +293,13 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             );
         } else if (e.key === "Enter" && highlightedTagIndex !== -1) {
             e.preventDefault();
-            form.setValue("tag", tagSuggestions[highlightedTagIndex], {
-                shouldValidate: true,
-            });
+            const chosenTag = tagSuggestions[highlightedTagIndex];
+            form.setValue("tag", chosenTag.name, {shouldValidate: true});
+            setOriginalTag(chosenTag.name);
             setShowTagDropdown(false);
         } else if (e.key === "Escape") {
             setShowTagDropdown(false);
         }
-    };
-
-    const handleTagSuggestionClick = (tag: string) => {
-        form.setValue("tag", tag, {shouldValidate: true});
-        setShowTagDropdown(false);
     };
 
     const handleTagBlur = () => {
@@ -225,6 +311,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         form.reset();
         setSelectedServiceId(null);
         setTagSuggestions([]);
+        setOriginalTag("");
         setShowTagDropdown(false);
     };
 
@@ -243,12 +330,13 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                     </div>
                 </div>
             </CardHeader>
+
             <Separator className="mb-6"/>
+
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
                         <div className="space-y-4">
-                            {/* Service Name Field */}
                             <FormField
                                 control={form.control}
                                 name="serviceName"
@@ -256,9 +344,8 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2 text-primary/80">
                                             Service Name
-                                            <span className="text-xs text-muted-foreground">
-                        (auto-format to lowercase)
-                      </span>
+                                            <span
+                                                className="text-xs text-muted-foreground">(auto-format to lowercase)</span>
                                         </FormLabel>
                                         <FormControl>
                                             <div className="relative" ref={suggestionsRef}>
@@ -314,72 +401,124 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2 text-primary/80">
                                             Version Tag
-                                            <span className="text-xs text-muted-foreground">
-                        (Format: X.X.X)
-                      </span>
+                                            <span className="text-xs text-muted-foreground">(Format: X.X.X)</span>
                                         </FormLabel>
                                         <FormControl>
-                                            <div className="relative">
-                                                <Popover
-                                                    open={selectedServiceId !== null && showTagDropdown}
-                                                    onOpenChange={(open) => {
-                                                        if (selectedServiceId) {
-                                                            setShowTagDropdown(open);
-                                                        } else {
-                                                            setShowTagDropdown(false);
-                                                        }
-                                                    }}
-                                                >
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            className={`w-full justify-between h-12 px-5 ${
-                                                                field.value !== ""
-                                                                    ? "text-primary"
-                                                                    : "text-muted-foreground"
-                                                            } ${!selectedServiceId ? "opacity-50 cursor-not-allowed" : ""}`}
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                if (!selectedServiceId) return;
-                                                                setShowTagDropdown(true);
-                                                            }}
-                                                            tabIndex={0}
-                                                            disabled={!selectedServiceId}
-                                                        >
-                                                            {field.value || "SELECT A VERSION"}
-                                                            <ChevronDown
-                                                                className="ml-2 h-4 w-4 text-muted-foreground"/>
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent
-                                                        onBlur={handleTagBlur}
-                                                        onKeyDown={handleTagKeyDown}
-                                                        className="w-[var(--radix-popover-trigger-width)] p-0"
+                                            <div className="flex flex-col gap-2">
+                                                <div className="relative">
+                                                    <Popover
+                                                        open={selectedServiceId !== null && showTagDropdown}
+                                                        onOpenChange={(open) => {
+                                                            if (selectedServiceId) {
+                                                                setShowTagDropdown(open);
+                                                            } else {
+                                                                setShowTagDropdown(false);
+                                                            }
+                                                        }}
                                                     >
-                                                        <div className="max-h-60 overflow-y-auto">
-                                                            {tagSuggestions.map((tag, index) => (
-                                                                <div
-                                                                    key={index}
-                                                                    onMouseDown={() => handleTagSuggestionClick(tag)}
-                                                                    className={`px-4 py-2 cursor-pointer ${
-                                                                        highlightedTagIndex === index
-                                                                            ? "bg-primary text-white"
-                                                                            : ""
-                                                                    } hover:bg-gray-100`}
-                                                                >
-                                                                    {tag}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                role="combobox"
+                                                                className={`w-full justify-between h-12 px-5 ${
+                                                                    field.value !== ""
+                                                                        ? "text-primary"
+                                                                        : "text-muted-foreground"
+                                                                } ${
+                                                                    !selectedServiceId
+                                                                        ? "opacity-50 cursor-not-allowed"
+                                                                        : ""
+                                                                }`}
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    if (!selectedServiceId) return;
+                                                                    setShowTagDropdown(true);
+                                                                }}
+                                                                tabIndex={0}
+                                                                disabled={!selectedServiceId}
+                                                            >
+                                                                {field.value || "SELECT A VERSION"}
+                                                                <ChevronDown
+                                                                    className="ml-2 h-4 w-4 text-muted-foreground"/>
+                                                            </Button>
+                                                        </PopoverTrigger>
+
+                                                        <PopoverContent
+                                                            onBlur={handleTagBlur}
+                                                            onKeyDown={handleTagKeyDown}
+                                                            className="w-[var(--radix-popover-trigger-width)] p-0"
+                                                        >
+                                                            <div className="max-h-60 overflow-y-auto">
+                                                                {tagSuggestions.map((tagItem, index) => (
+                                                                    <div
+                                                                        key={index}
+                                                                        onMouseDown={() => handleTagSuggestionClick(tagItem)}
+                                                                        className={`px-4 py-2 cursor-pointer ${
+                                                                            highlightedTagIndex === index
+                                                                                ? "bg-primary text-white"
+                                                                                : ""
+                                                                        } hover:bg-gray-100`}
+                                                                    >
+                                                                        {`${tagItem.env}/${tagItem.name}`}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </div>
+
+                                                {/* MANUAL EDIT (INPUT + +/- BUTTONS) */}
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        className={`bg-black text-white hover:bg-black/90 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1`}
+                                                        type="button"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            const updated = decrementPatch(field.value);
+                                                            field.onChange(updated);
+                                                        }}
+                                                        disabled={!field.value}
+                                                    >
+                                                        -
+                                                    </Button>
+
+                                                    <Input
+                                                        value={field.value}
+                                                        onChange={(e) => handleTagManualChange(e, field)}
+                                                        placeholder="X.X.X"
+                                                        className="w-[120px]"
+                                                        disabled={!selectedServiceId}
+                                                    />
+
+                                                    <Button
+                                                        className={`bg-black text-white hover:bg-black/90 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1`}
+                                                        type="button"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            const updated = incrementPatch(field.value);
+                                                            const newValNum = compareVersionValue(updated);
+                                                            const origValNum = originalTag ? compareVersionValue(originalTag) : undefined;
+                                                            if (
+                                                                newValNum &&
+                                                                origValNum &&
+                                                                newValNum < origValNum
+                                                            ) {
+                                                                field.onChange(originalTag);
+                                                            } else {
+                                                                field.onChange(updated);
+                                                            }
+                                                        }}
+                                                        disabled={!field.value}
+                                                    >
+                                                        +
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </FormControl>
                                         <FormMessage className="text-xs"/>
                                         <p className="text-xs text-muted-foreground mt-1">
                                             {selectedServiceId
-                                                ? `Available versions for service ${selectedServiceId}`
+                                                ? `Available versions for service ${selectedServiceId} (Pick +/ - to edit patch, or edit manually)`
                                                 : "Select a service first"}
                                         </p>
                                     </FormItem>
@@ -393,14 +532,18 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                 <div className="flex flex-wrap items-center gap-2 text-sm">
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <FileText className="h-4 w-4"/>
-                                        <span className="font-bold text-[13px] hidden sm:inline">Content:</span>
+                                        <span className="font-bold text-[13px] hidden sm:inline">
+                      Content:
+                    </span>
                                     </div>
                                     <pre className="flex-1 min-w-[200px] truncate">
                     {serviceNameWatch.toLowerCase() || "service-name"}:{tagWatch || "0.0.0"}
                   </pre>
                                 </div>
                                 <div className="mt-2 text-xs text-muted-foreground truncate">
-                                    <span className="font-semibold text-[11px] hidden sm:inline">File Name: </span>
+                  <span className="font-semibold text-[11px] hidden sm:inline">
+                    File Name:{" "}
+                  </span>
                                     {fileNamePreview}
                                 </div>
                             </div>
@@ -414,6 +557,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                     setSelectedServiceId(null);
                                     setTagSuggestions([]);
                                     setShowTagDropdown(false);
+                                    setOriginalTag("");
                                 }}
                             >
                                 <Trash2 className="sm:mr-2"/>
