@@ -7,7 +7,7 @@ import {useToast} from "@/hooks/use-toast";
 import {deleteFile, handleDownload, loadRecentFiles, RecentFile, saveFileToDirectory,} from "@/services/fileService";
 
 export default function Home() {
-    const { toast } = useToast();
+    const {toast} = useToast();
     const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
     const [isApiSupported, setIsApiSupported] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -27,7 +27,7 @@ export default function Home() {
 
     const handleChooseDirectory = async () => {
         try {
-            const handle = await window.showDirectoryPicker!({ mode: "readwrite" });
+            const handle = await window.showDirectoryPicker!({mode: "readwrite"});
             setDirectoryHandle(handle);
             toast({
                 title: "Location Set",

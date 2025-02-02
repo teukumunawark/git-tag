@@ -2,14 +2,7 @@ import React, {useEffect, useState} from "react";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
 import {ChevronDown, Download, FileText, Search, Tag, Trash2} from "lucide-react";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
@@ -31,7 +24,6 @@ export type FormValues = z.infer<typeof formSchema>;
 interface FileFormProps {
     onSubmit: (values: FormValues) => Promise<void>;
     isProcessing: boolean;
-    onReset?: () => void;
 }
 
 interface Repository {
@@ -44,7 +36,7 @@ interface Tag {
     env: string;
 }
 
-export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onReset}) => {
+export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -172,7 +164,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onRes
         }
     };
 
-    // Handle click on a tag suggestion
     const handleTagSuggestionClick = (tag: string) => {
         form.setValue("tag", tag, {shouldValidate: true});
         setShowTagDropdown(false);
@@ -181,6 +172,11 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onRes
 
     const handleTagBlur = () => {
         setTimeout(() => setShowTagDropdown(false), 200);
+    };
+
+    const handleFormSubmit = async (values: FormValues) => {
+        await onSubmit(values);
+        form.reset();
     };
 
     return (
@@ -199,7 +195,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onRes
             <Separator className="mb-6"/>
             <CardContent>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
                         <div className="space-y-4">
                             {/* Service Name Field */}
                             <FormField
@@ -218,7 +214,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onRes
                                                     className="absolute left-4 top-[13.7px] h-5 w-5 text-muted-foreground"/>
                                                 <Input
                                                     {...field}
-                                                    value={searchTerm}
                                                     onChange={(e) => {
                                                         handleServiceNameChange(e);
                                                         field.onChange(e);
@@ -248,7 +243,8 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onRes
                                             </div>
                                         </FormControl>
                                         <FormMessage className="text-xs"/>
-                                        <p className="text-xs text-muted-foreground mt-1">Start typing to see available
+                                        <p className="text-xs text-muted-foreground mt-1">Start typing to see
+                                            available
                                             services</p>
                                     </FormItem>
                                 )}
@@ -272,14 +268,14 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onRes
                                                         <Button
                                                             variant="outline"
                                                             role="combobox"
-                                                            className="w-full justify-between h-12 px-5"
+                                                            className={`w-full justify-between h-12 px-5 ${field.value !== "" ? "text-primary" : "text-muted-foreground"}`}
                                                             onClick={(e) => {
                                                                 e.preventDefault();
                                                                 setShowTagDropdown(true);
                                                             }}
                                                             tabIndex={0}
                                                         >
-                                                            {field.value || "Select a version..."}
+                                                            {field.value || "SELECT A VERSION"}
                                                             <ChevronDown
                                                                 className="ml-2 h-4 w-4 text-muted-foreground"/>
                                                         </Button>
@@ -338,12 +334,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onRes
                                 size="sm"
                                 type="button"
                                 className="ml-auto sm:ml-0 gap-0 flex items-center hover:bg-primary/30"
-                                onClick={() => {
-                                    form.reset({
-                                        serviceName: "",
-                                        tag: "",
-                                    });
-                                }}
+                                onClick={() => form.reset()}
                             >
                                 <Trash2 className="sm:mr-2"/>
                                 <span className="hidden sm:inline text-[0.775rem]">Clear Input</span>
@@ -372,8 +363,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing, onRes
                 </Form>
             </CardContent>
         </Card>
-    )
-        ;
+    );
 };
 
 const highlightQuery = (text: string, query: string) => {
