@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import {ThemeProvider} from "@/components/theme-provider"
 import {Toaster} from "@/components/ui/toaster";
+import {SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
+import {AppSidebar} from "@/components/app-sidebar";
 
 
 const geistSans = localFont({
@@ -31,8 +33,14 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
             enableSystem
             disableTransitionOnChange
         >
-            <main>{children}</main>
-            <Toaster />
+            <SidebarProvider>
+                <AppSidebar/>
+                <main className="w-full">
+                    <SidebarTrigger/>
+                    {children}
+                </main>
+            </SidebarProvider>
+            <Toaster/>
         </ThemeProvider>
         </body>
         </html>

@@ -348,7 +348,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                                 key={repo.id}
                                                                 onMouseDown={() => handleSuggestionClick(repo)}
                                                                 className={`px-4 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
-                                                                    highlightedIndex === index ? "bg-accent text-accent-foreground" : ""
+                                                                    highlightedIndex === index ? "bg-accent generate-text-accent-foreground" : ""
                                                                 }`}
                                                             >
                                                                 {highlightQuery(repo.name, searchTerm)}
@@ -395,7 +395,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                                 variant="outline"
                                                                 role="combobox"
                                                                 className={`w-full justify-between h-12 px-5 ${
-                                                                    field.value !== "" ? "text-foreground" : "text-muted-foreground"
+                                                                    field.value !== "" ? "generate-text-foreground" : "generate-text-muted-foreground"
                                                                 } ${
                                                                     !selectedServiceId
                                                                         ? "opacity-50 cursor-not-allowed"
@@ -426,7 +426,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                                         onMouseDown={() => handleTagSuggestionClick(tagItem)}
                                                                         className={`px-4 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
                                                                             highlightedTagIndex === index
-                                                                                ? "bg-accent text-accent-foreground"
+                                                                                ? "bg-accent generate-text-accent-foreground"
                                                                                 : ""
                                                                         }`}
                                                                     >

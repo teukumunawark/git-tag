@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { GitPullRequestCreate, Loader2, CheckCircle2 } from "lucide-react";
-import { ModeToggle } from "@/components/mode-toggle";
-import { Button } from "@/components/ui/button";
+import React, {useEffect, useState} from "react";
+import {GitPullRequestCreate, Loader2, CheckCircle2} from "lucide-react";
+import {ModeToggle} from "@/components/mode-toggle";
+import {Button} from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -10,8 +10,8 @@ import {
     DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
+import {Input} from "@/components/ui/input";
+import {motion} from "framer-motion";
 
 export const Header: React.FC = () => {
     const [showSettings, setShowSettings] = useState(false);
@@ -84,14 +84,9 @@ export const Header: React.FC = () => {
                 <div className="flex items-center">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <GitPullRequestCreate className="text-xl font-bold" />
+                            <GitPullRequestCreate className="text-xl font-bold"/>
                         </div>
-                        <span className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent hidden lg:inline-block">
-              Project Ambisius Squad 2
-              <span className="text-sm ml-2 bg-primary/10 text-primary px-2 py-1 rounded-full hidden lg:inline-block">
-                v1.0
-              </span>
-            </span>
+
                     </div>
                 </div>
                 <div className="flex gap-4">
@@ -109,7 +104,7 @@ export const Header: React.FC = () => {
                             Settings
                         </Button>
                     )}
-                    <ModeToggle />
+                    <ModeToggle/>
                 </div>
             </div>
 
@@ -135,8 +130,8 @@ export const Header: React.FC = () => {
                             {errorMsg && (
                                 <motion.p
                                     className="text-sm text-red-500 mt-1"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
+                                    initial={{opacity: 0}}
+                                    animate={{opacity: 1}}
                                 >
                                     {errorMsg}
                                 </motion.p>
@@ -144,10 +139,10 @@ export const Header: React.FC = () => {
                             {successMsg && (
                                 <motion.p
                                     className="flex items-center text-sm text-green-500 mt-1"
-                                    initial={{ scale: 0.9, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
+                                    initial={{scale: 0.9, opacity: 0}}
+                                    animate={{scale: 1, opacity: 1}}
                                 >
-                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                    <CheckCircle2 className="mr-2 h-4 w-4"/>
                                     {successMsg}
                                 </motion.p>
                             )}
@@ -160,7 +155,7 @@ export const Header: React.FC = () => {
                             >
                                 {isTesting ? (
                                     <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                                         Connecting...
                                     </>
                                 ) : (
@@ -205,8 +200,8 @@ export const Header: React.FC = () => {
                             {errorMsg && (
                                 <motion.p
                                     className="text-sm text-red-500 mt-1"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
+                                    initial={{opacity: 0}}
+                                    animate={{opacity: 1}}
                                 >
                                     {errorMsg}
                                 </motion.p>
@@ -214,10 +209,10 @@ export const Header: React.FC = () => {
                             {successMsg && (
                                 <motion.p
                                     className="flex items-center text-sm text-green-500 mt-1"
-                                    initial={{ scale: 0.9, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
+                                    initial={{scale: 0.9, opacity: 0}}
+                                    animate={{scale: 1, opacity: 1}}
                                 >
-                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                    <CheckCircle2 className="mr-2 h-4 w-4"/>
                                     {successMsg}
                                 </motion.p>
                             )}
@@ -241,7 +236,7 @@ export const Header: React.FC = () => {
                             >
                                 {isTesting ? (
                                     <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                                         Connecting...
                                     </>
                                 ) : (

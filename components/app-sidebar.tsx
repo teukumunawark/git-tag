@@ -1,0 +1,60 @@
+"use client"
+
+import * as React from "react"
+import {usePathname} from "next/navigation"
+import {CurlyBraces, GitPullRequestCreate, Home, Settings2, SquareTerminal} from "lucide-react"
+
+import {NavMain} from "@/components/nav-main"
+import {Sidebar, SidebarContent, SidebarHeader, SidebarRail} from "@/components/ui/sidebar"
+import {SquadDua} from "@/components/squad-dua"
+
+const data = {
+    teams: [
+        {
+            name: "Squad 2",
+            logo: GitPullRequestCreate,
+            plan: "Project Ambisius",
+        }
+    ],
+    navMain: [
+        {
+            title: "Home",
+            url: "/",
+            icon: Home,
+        },
+        {
+            title: "Generate File .txt",
+            url: "generate-text",
+            icon: SquareTerminal,
+        },
+        {
+            title: "Generate cURL",
+            url: "generate-curl",
+            icon: CurlyBraces,
+        },
+        {
+            title: "Settings",
+            url: "settings",
+            icon: Settings2,
+        },
+    ]
+}
+
+export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
+    const pathname = usePathname();
+
+    return (
+        <Sidebar collapsible="icon" {...props}>
+            <SidebarHeader>
+                <SquadDua teams={data.teams}/>
+            </SidebarHeader>
+            <SidebarContent>
+                <NavMain items={data.navMain.map(item => ({
+                    ...item,
+                    isActive: pathname === item.url,
+                }))}/>
+            </SidebarContent>
+            <SidebarRail/>
+        </Sidebar>
+    )
+}
