@@ -5,8 +5,9 @@ import {usePathname} from "next/navigation"
 import {CurlyBraces, GitPullRequestCreate, Home, Settings2, SquareTerminal} from "lucide-react"
 
 import {NavMain} from "@/components/nav-main"
-import {Sidebar, SidebarContent, SidebarHeader, SidebarRail} from "@/components/ui/sidebar"
+import {Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail} from "@/components/ui/sidebar"
 import {SquadDua} from "@/components/squad-dua"
+import {ModeToggle} from "@/components/mode-toggle";
 
 const data = {
     teams: [
@@ -24,17 +25,17 @@ const data = {
         },
         {
             title: "Generate File .txt",
-            url: "generate-text",
+            url: "/generate-text",
             icon: SquareTerminal,
         },
         {
             title: "Generate cURL",
-            url: "generate-curl",
+            url: "/generate-curl",
             icon: CurlyBraces,
         },
         {
             title: "Settings",
-            url: "settings",
+            url: "/settings",
             icon: Settings2,
         },
     ]
@@ -42,6 +43,8 @@ const data = {
 
 export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
     const pathname = usePathname();
+
+    console.log(pathname)
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -54,6 +57,9 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
                     isActive: pathname === item.url,
                 }))}/>
             </SidebarContent>
+            <SidebarFooter>
+                <ModeToggle/>
+            </SidebarFooter>
             <SidebarRail/>
         </Sidebar>
     )

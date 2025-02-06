@@ -143,7 +143,7 @@ export default function GenerateCurl() {
                     <Button
                         onClick={generateCurlCommand}
                         disabled={!isValidJson || isLoading}
-                        className="w-full mt-4 h-12 text-lg shadow-md transition-transform hover:scale-[1.02] dark:text-black"
+                        className="w-full mt-4 h-12 text-lg shadow-md transition-transform hover:scale-[1.02] dark:text-black text-white"
                     >
                         {isLoading ? (
                             <>
