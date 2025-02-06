@@ -14,8 +14,8 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 
 export default function GenerateCurl() {
     const [jsonInput, setJsonInput] = useState("");
-    const [curlCommandPretty, setCurlCommandPretty] = useState(""); // Versi rapi (multi-line)
-    const [curlCommandSingleLine, setCurlCommandSingleLine] = useState(""); // Versi single-line
+    const [curlCommandPretty, setCurlCommandPretty] = useState("");
+    const [curlCommandSingleLine, setCurlCommandSingleLine] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isValidJson, setIsValidJson] = useState(true);
     const [wrapLines, setWrapLines] = useState(true);
@@ -111,7 +111,7 @@ export default function GenerateCurl() {
                         <div className="space-y-1">
                             <CardTitle className="text-xl font-semibold">JSON Input</CardTitle>
                             <Label className="text-sm text-muted-foreground">
-                                Paste your HAR/JSON data below
+                                Paste your JSON data below
                             </Label>
                         </div>
                         <Badge
@@ -143,7 +143,7 @@ export default function GenerateCurl() {
                     <Button
                         onClick={generateCurlCommand}
                         disabled={!isValidJson || isLoading}
-                        className="w-full mt-4 h-12 text-lg shadow-md transition-transform hover:scale-[1.02]"
+                        className="w-full mt-4 h-12 text-lg shadow-md transition-transform hover:scale-[1.02] dark:text-black"
                     >
                         {isLoading ? (
                             <>
