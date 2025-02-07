@@ -13,6 +13,11 @@ export function ModeToggle() {
     const {theme, setTheme} = useTheme()
     const {open} = useSidebar()
     const [isOpen, setIsOpen] = React.useState(false)
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
 
     return (
         <DropdownMenu onOpenChange={setIsOpen}>
@@ -29,31 +34,38 @@ export function ModeToggle() {
                     )}
                 >
                     {/* Animated Theme Icons */}
-                    <motion.div
-                        key={theme}
-                        initial={{opacity: 0, scale: 0.8}}
-                        animate={{opacity: 1, scale: 1}}
-                        exit={{opacity: 0, scale: 0.8}}
-                        transition={{type: "spring", stiffness: 200, damping: 20}}
-                        className="relative flex items-center"
-                    >
-                        {theme === "light" && <Sun className="h-5 w-5 text-yellow-500"/>}
-                        {theme === "dark" && <Moon className="h-5 w-5 text-indigo-400"/>}
-                        {theme === "system" && <Monitor className="h-5 w-5 text-emerald-500"/>}
-                    </motion.div>
+                    {mounted ? (
+                        <motion.div
+                            key={theme}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                            className="relative flex items-center"
+                        >
+                            {theme === "light" && <Sun className="h-5 w-5 text-yellow-500" />}
+                            {theme === "dark" && <Moon className="h-5 w-5 text-indigo-400" />}
+                            {theme === "system" && <Monitor className="h-5 w-5 text-emerald-500" />}
+                        </motion.div>
+                    ) : (
+                        <div className="h-5 w-5" />
+                    )}
 
                     {open && (
                         <motion.div
-                            initial={{opacity: 0, x: -10}}
-                            animate={{opacity: 1, x: 0}}
-                            exit={{opacity: 0, x: -10}}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
                             className="flex flex-1 items-center justify-between"
                         >
                             <span className="text-sm">Theme</span>
-                            <span className="text-xs text-muted-foreground">{theme
-                                ? theme.charAt(0).toUpperCase() + theme.slice(1)
-                                : "System"}
-                            </span>
+                            {mounted ? (
+                                <span className="text-xs text-muted-foreground">
+                  {theme ? theme.charAt(0).toUpperCase() + theme.slice(1) : "System"}
+                </span>
+                            ) : (
+                                <span className="text-xs text-muted-foreground">System</span>
+                            )}
                         </motion.div>
                     )}
                 </Button>
