@@ -33,11 +33,11 @@ const data = {
             url: "/generate-curl",
             icon: CurlyBraces,
         },
-        {
-            title: "Settings",
-            url: "/settings",
-            icon: Settings2,
-        },
+        // {
+        //     title: "Settings",
+        //     url: "/settings",
+        //     icon: Settings2,
+        // },
     ]
 }
 
@@ -47,7 +47,7 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
     console.log(pathname)
 
     return (
-        <Sidebar collapsible="icon" {...props}>
+        <Sidebar collapsible="icon" {...props} variant="floating">
             <SidebarHeader>
                 <SquadDua teams={data.teams}/>
             </SidebarHeader>

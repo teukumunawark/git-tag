@@ -48,12 +48,10 @@ export default function GenerateCurl() {
             };
             const body = jsonData._source?.request?.body;
 
-            // Menambahkan Content-Type secara eksplisit jika belum ada dan body ada
             if (!headers["Content-Type"] && body) {
                 headers["Content-Type"] = "application/json";
             }
 
-            // Membuat cURL command dalam format rapi (multi-line)
             let curlCmdPretty = `curl --silent --location --request ${method} '${url}'`;
             Object.entries(headers).forEach(([key, value]) => {
                 curlCmdPretty += ` \\\n--header '${key}: ${value}'`;
@@ -73,7 +71,6 @@ export default function GenerateCurl() {
                 curlCmdSingleLine += ` --data '${formattedBody}'`;
             }
 
-            // Menyimpan kedua versi cURL
             setCurlCommandPretty(curlCmdPretty);
             setCurlCommandSingleLine(curlCmdSingleLine);
 
@@ -103,7 +100,7 @@ export default function GenerateCurl() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 w-full">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 py-4 w-full">
             {/* Input Section */}
             <Card className="min-w-0 shadow-lg">
                 <CardHeader className="pb-3">
@@ -215,12 +212,12 @@ export default function GenerateCurl() {
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <Button
-                                                    variant="ghost"
+                                                    variant="default"
                                                     size="icon"
                                                     onClick={() => copyToClipboard(format)}
                                                     className="h-8 w-8 hover:bg-primary/10"
                                                 >
-                                                    <Clipboard className="h-4 w-4" />
+                                                    <Clipboard className="h-4 w-4 text-white dark:text-black" />
                                                 </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>

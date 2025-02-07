@@ -107,7 +107,7 @@ export default function Page() {
 
     return (
         <div className="mx-auto px-4">
-            <div className="py-6 mx-auto">
+            <div className="py-4 mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <FileForm
                         onSubmit={onSubmit}
