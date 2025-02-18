@@ -74,7 +74,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const serviceInputRef = useRef<HTMLInputElement>(null);
 
-    const [baseURL, setBaseURL] = useState("http://localhost:8080");
+    const [baseURL, setBaseURL] = useState("http://localhost:6969");
 
     useEffect(() => {
         const storedURL = typeof window !== "undefined" ? localStorage.getItem("baseURL") : null;

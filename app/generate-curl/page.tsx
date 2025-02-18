@@ -34,7 +34,8 @@ export default function GenerateCurl() {
         setIsLoading(true);
         try {
             const jsonData = JSON.parse(jsonInput);
-            const url = jsonData.fields?.request?.url || "http://localhost:8080";
+            const baseUrl = jsonData.fields?.request?.url || "http://localhost:8080";
+            const uri =  jsonData._source.request?.uri
             const method = jsonData._source?.request?.http_method.toUpperCase() || "POST";
             const contextHeaders = jsonData._source?.context || {};
             const requestHeaders = jsonData.fields?.request?.headers || {};
@@ -46,13 +47,18 @@ export default function GenerateCurl() {
                     Object.entries(requestHeaders).filter(([_, value]) => value !== null && value !== "")
                 ),
             };
+
+
             const body = jsonData._source?.request?.body;
+            const fullUrl = baseUrl + uri;
+
+            console.log(fullUrl)
 
             if (!headers["Content-Type"] && body) {
                 headers["Content-Type"] = "application/json";
             }
 
-            let curlCmdPretty = `curl --silent --location --request ${method} '${url}'`;
+            let curlCmdPretty = `curl --silent --location --request ${method} '${fullUrl}'`;
             Object.entries(headers).forEach(([key, value]) => {
                 curlCmdPretty += ` \\\n--header '${key}: ${value}'`;
             });
@@ -61,7 +67,7 @@ export default function GenerateCurl() {
                 curlCmdPretty += ` \\\n--data '${formattedBody}'`;
             }
 
-            let curlCmdSingleLine = `curl --silent --location --request ${method} '${url}'`;
+            let curlCmdSingleLine = `curl --silent --location --request ${method} '${fullUrl}'`;
             Object.entries(headers).forEach(([key, value]) => {
                 curlCmdSingleLine += ` --header '${key}: ${value}'`;
             });
