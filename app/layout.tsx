@@ -25,9 +25,6 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {
-    const cookieStore = await cookies()
-    const defaultOpen = cookieStore.get("sidebar:state")?.value === "true"
-
     return (
         <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
@@ -37,7 +34,7 @@ export default async function RootLayout({children,}: Readonly<{ children: React
             enableSystem
             disableTransitionOnChange
         >
-            <SidebarProvider defaultOpen={defaultOpen}>
+            <SidebarProvider>
                 <AppSidebar/>
                 <main className="w-full">
                     <SidebarTrigger/>
