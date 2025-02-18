@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import {usePathname} from "next/navigation"
-import {CurlyBraces, GitPullRequestCreate, Home, Settings2, SquareTerminal} from "lucide-react"
+import {CurlyBraces, GitPullRequestCreate, Home, SquareTerminal} from "lucide-react"
 
 import {NavMain} from "@/components/nav-main"
 import {Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail} from "@/components/ui/sidebar"

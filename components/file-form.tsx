@@ -204,11 +204,11 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         return {major, minor, patch};
     }
 
-    const compareVersionValue = (versionStr: string): number | undefined => {
-        const version = parseVersion(versionStr);
-        if (!version) return undefined;
-        return version.major * 10000 + version.minor * 100 + version.patch;
-    };
+    // const compareVersionValue = (versionStr: string): number | undefined => {
+    //     const version = parseVersion(versionStr);
+    //     if (!version) return undefined;
+    //     return version.major * 10000 + version.minor * 100 + version.patch;
+    // };
 
     const handleTagSuggestionClick = (tagItem: Tag) => {
         form.setValue("tag", tagItem.name, {shouldValidate: true});
@@ -216,47 +216,47 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         setShowTagDropdown(false);
     };
 
-    const handleTagManualChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-        field: { onChange: (val: string) => void; value: string }
-    ) => {
-        const newVal = e.target.value;
-        field.onChange(newVal);
-        if (!originalTag) return;
-        const newValNum = compareVersionValue(newVal);
-        const origValNum = compareVersionValue(originalTag);
-        if (!newValNum || !origValNum) {
-            return;
-        }
-        if (newValNum < origValNum) {
-            field.onChange(originalTag);
-        }
-    };
-
-    const incrementPatch = (fieldValue: string) => {
-        const version = parseVersion(fieldValue);
-        if (!version) return fieldValue;
-        const {major, minor, patch} = version;
-        const newPatch = patch + 1;
-        return `${major}.${minor}.${newPatch}`;
-    };
-
-    const decrementPatch = (fieldValue: string) => {
-        const version = parseVersion(fieldValue);
-        if (!version) return fieldValue;
-        let patch = version.patch;
-        const {major, minor} = version;
-        if (patch > 0) {
-            patch -= 1;
-        }
-        const newVersion = `${major}.${minor}.${patch}`;
-        const newValNum = compareVersionValue(newVersion);
-        const origValNum = originalTag ? compareVersionValue(originalTag) : 0;
-        if (origValNum && newValNum && newValNum < origValNum) {
-            return originalTag;
-        }
-        return newVersion;
-    };
+    // const handleTagManualChange = (
+    //     e: React.ChangeEvent<HTMLInputElement>,
+    //     field: { onChange: (val: string) => void; value: string }
+    // ) => {
+    //     const newVal = e.target.value;
+    //     field.onChange(newVal);
+    //     if (!originalTag) return;
+    //     const newValNum = compareVersionValue(newVal);
+    //     const origValNum = compareVersionValue(originalTag);
+    //     if (!newValNum || !origValNum) {
+    //         return;
+    //     }
+    //     if (newValNum < origValNum) {
+    //         field.onChange(originalTag);
+    //     }
+    // };
+    //
+    // const incrementPatch = (fieldValue: string) => {
+    //     const version = parseVersion(fieldValue);
+    //     if (!version) return fieldValue;
+    //     const {major, minor, patch} = version;
+    //     const newPatch = patch + 1;
+    //     return `${major}.${minor}.${newPatch}`;
+    // };
+    //
+    // const decrementPatch = (fieldValue: string) => {
+    //     const version = parseVersion(fieldValue);
+    //     if (!version) return fieldValue;
+    //     let patch = version.patch;
+    //     const {major, minor} = version;
+    //     if (patch > 0) {
+    //         patch -= 1;
+    //     }
+    //     const newVersion = `${major}.${minor}.${patch}`;
+    //     const newValNum = compareVersionValue(newVersion);
+    //     const origValNum = originalTag ? compareVersionValue(originalTag) : 0;
+    //     if (origValNum && newValNum && newValNum < origValNum) {
+    //         return originalTag;
+    //     }
+    //     return newVersion;
+    // };
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (!tagSuggestions.length) return;
