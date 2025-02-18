@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -85,18 +85,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     }, []);
 
     useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (searchTerm.trim().length > 0) {
-                fetchRepositorySuggestions(searchTerm.trim());
-            } else {
-                setRepositorySuggestions([]);
-                setShowSuggestions(false);
-            }
-        }, 400);
-        return () => clearTimeout(timeout);
-    }, [searchTerm]);
-
-    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 suggestionsRef.current &&
@@ -113,7 +101,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         };
     }, []);
 
-    const fetchRepositorySuggestions = async (query: string) => {
+    const fetchRepositorySuggestions = useCallback(async (query: string) => {
         try {
             const response = await fetch(`${baseURL}/repository?search=${query}`);
             if (!response.ok) return;
@@ -124,8 +112,22 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             setRepositorySuggestions(filtered);
             setShowSuggestions(true);
         } catch (_) {
+            // Handle error silently
         }
-    };
+    }, [baseURL]);
+
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (searchTerm.trim().length > 0) {
+                fetchRepositorySuggestions(searchTerm.trim());
+            } else {
+                setRepositorySuggestions([]);
+                setShowSuggestions(false);
+            }
+        }, 400);
+        return () => clearTimeout(timeout);
+    }, [searchTerm, fetchRepositorySuggestions]);
 
     const fetchTagSuggestions = async (repoId: number) => {
         try {
