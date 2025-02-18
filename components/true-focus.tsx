@@ -84,23 +84,17 @@ const TrueFocus: React.FC<TrueFocusProps> = ({
                 return (
                     <span
                         key={index}
-                        ref={(el) => (wordRefs.current[index] = el)}
+                        ref={(el) => {
+                            wordRefs.current[index] = el;
+                        }}
                         className="relative text-[3rem] font-black cursor-pointer"
                         style={{
-                            filter: manualMode
-                                ? isActive
-                                    ? `blur(0px)`
-                                    : `blur(${blurAmount}px)`
-                                : isActive
-                                    ? `blur(0px)`
-                                    : `blur(${blurAmount}px)`,
+                            filter: isActive ? "blur(0px)" : `blur(${blurAmount}px)`,
                             transition: `filter ${animationDuration}s ease`,
-                        } as React.CSSProperties}
+                        }}
                         onMouseEnter={() => handleMouseEnter(index)}
                         onMouseLeave={handleMouseLeave}
-                    >
-                        {word}
-                    </span>
+                    >{word}</span>
                 );
             })}
 
