@@ -530,7 +530,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                 type="submit"
                                 size="lg"
                                 disabled={isProcessing}
-                                className="w-full h-12 text-base gap-3 hover:shadow-md transition-shadow dark:text-black text-white"
+                                className="w-full h-12 text-base gap-3 hover:shadow-md transition-shadow text-secondary"
                             >
                                 {isProcessing ? (
                                     <span>Generating...</span>

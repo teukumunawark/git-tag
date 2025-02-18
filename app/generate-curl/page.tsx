@@ -48,11 +48,8 @@ export default function GenerateCurl() {
                 ),
             };
 
-
             const body = jsonData._source?.request?.body;
             const fullUrl = baseUrl + uri;
-
-            console.log(fullUrl)
 
             if (!headers["Content-Type"] && body) {
                 headers["Content-Type"] = "application/json";
@@ -145,7 +142,7 @@ export default function GenerateCurl() {
                     <Button
                         onClick={generateCurlCommand}
                         disabled={!isValidJson || isLoading}
-                        className="w-full mt-4 h-12 text-lg shadow-md transition-transform hover:scale-[1.02] dark:text-black text-white"
+                        className="w-full mt-4 h-12 text-lg shadow-md transition-transform hover:scale-[1.02] text-secondary"
                     >
                         {isLoading ? (
                             <>
@@ -215,13 +212,13 @@ export default function GenerateCurl() {
                                                     variant="default"
                                                     size="icon"
                                                     onClick={() => copyToClipboard(format)}
-                                                    className="h-8 w-8 "
+                                                    className="h-8 w-8"
                                                 >
-                                                    <Clipboard className="h-4 w-4 text-white dark:text-black" />
+                                                    <Clipboard className="h-4 w-4 text-secondary" />
                                                 </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                                <p>Copy {format.replace('-', ' ')} version</p>
+                                                <p className="text-secondary">Copy {format.replace('-', ' ')} version</p>
                                             </TooltipContent>
                                         </Tooltip>
                                     </div>
