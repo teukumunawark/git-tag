@@ -3,6 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import {ThemeProvider} from "@/components/theme-provider"
 import {Toaster} from "@/components/ui/toaster";
+import {SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
+import {AppSidebar} from "@/components/app-sidebar";
+import {cookies} from "next/headers";
 
 
 const geistSans = localFont({
@@ -21,7 +24,10 @@ export const metadata: Metadata = {
     description: "Generate txt file",
 };
 
-export default function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {
+export default async function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {
+    const cookieStore = await cookies()
+    const defaultOpen = cookieStore.get("sidebar:state")?.value === "true"
+
     return (
         <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
@@ -31,8 +37,14 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
             enableSystem
             disableTransitionOnChange
         >
-            <main>{children}</main>
-            <Toaster />
+            <SidebarProvider defaultOpen={defaultOpen}>
+                <AppSidebar/>
+                <main className="w-full">
+                    <SidebarTrigger/>
+                    {children}
+                </main>
+            </SidebarProvider>
+            <Toaster/>
         </ThemeProvider>
         </body>
         </html>

@@ -46,7 +46,7 @@ export const saveFileToDirectory = async (directoryHandle: FileSystemDirectoryHa
 };
 
 export const handleDownload = (filename: string, content: string): RecentFile => {
-    const blob = new Blob([content], {type: "text/plain"});
+    const blob = new Blob([content], {type: "generate-text/plain"});
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;

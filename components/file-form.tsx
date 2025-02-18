@@ -3,12 +3,14 @@ import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
-import {ChevronDown, Download, FileText, Search, Trash2,} from "lucide-react";
+import {ChevronDown, Download, FileText, Search, Settings, Trash2,} from "lucide-react";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import {Input} from "./ui/input";
 import {Button} from "@/components/ui/button";
 import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
+import {Badge} from "@/components/ui/badge";
+import {ButtonSetting} from "@/components/button-setting";
 
 const formSchema = z.object({
     serviceName: z
@@ -74,7 +76,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const serviceInputRef = useRef<HTMLInputElement>(null);
 
-    const [baseURL, setBaseURL] = useState("http://localhost:8080");
+    const [baseURL, setBaseURL] = useState("http://localhost:6969");
 
     useEffect(() => {
         const storedURL = typeof window !== "undefined" ? localStorage.getItem("baseURL") : null;
@@ -194,21 +196,21 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         );
     };
 
-    function parseVersion(fieldValue: string) {
-        if (!fieldValue) return null;
-        const match = fieldValue.match(/^([0-9]+)\.([0-9]+)\.([0-9]+)$/);
-        if (!match) return null;
-        const major = parseInt(match[1], 10);
-        const minor = parseInt(match[2], 10);
-        const patch = parseInt(match[3], 10);
-        return {major, minor, patch};
-    }
+    // function parseVersion(fieldValue: string) {
+    //     if (!fieldValue) return null;
+    //     const match = fieldValue.match(/^([0-9]+)\.([0-9]+)\.([0-9]+)$/);
+    //     if (!match) return null;
+    //     const major = parseInt(match[1], 10);
+    //     const minor = parseInt(match[2], 10);
+    //     const patch = parseInt(match[3], 10);
+    //     return {major, minor, patch};
+    // }
 
-    const compareVersionValue = (versionStr: string): number | undefined => {
-        const version = parseVersion(versionStr);
-        if (!version) return undefined;
-        return version.major * 10000 + version.minor * 100 + version.patch;
-    };
+    // const compareVersionValue = (versionStr: string): number | undefined => {
+    //     const version = parseVersion(versionStr);
+    //     if (!version) return undefined;
+    //     return version.major * 10000 + version.minor * 100 + version.patch;
+    // };
 
     const handleTagSuggestionClick = (tagItem: Tag) => {
         form.setValue("tag", tagItem.name, {shouldValidate: true});
@@ -216,47 +218,47 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         setShowTagDropdown(false);
     };
 
-    const handleTagManualChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-        field: { onChange: (val: string) => void; value: string }
-    ) => {
-        const newVal = e.target.value;
-        field.onChange(newVal);
-        if (!originalTag) return;
-        const newValNum = compareVersionValue(newVal);
-        const origValNum = compareVersionValue(originalTag);
-        if (!newValNum || !origValNum) {
-            return;
-        }
-        if (newValNum < origValNum) {
-            field.onChange(originalTag);
-        }
-    };
-
-    const incrementPatch = (fieldValue: string) => {
-        const version = parseVersion(fieldValue);
-        if (!version) return fieldValue;
-        const {major, minor, patch} = version;
-        const newPatch = patch + 1;
-        return `${major}.${minor}.${newPatch}`;
-    };
-
-    const decrementPatch = (fieldValue: string) => {
-        const version = parseVersion(fieldValue);
-        if (!version) return fieldValue;
-        let patch = version.patch;
-        const {major, minor} = version;
-        if (patch > 0) {
-            patch -= 1;
-        }
-        const newVersion = `${major}.${minor}.${patch}`;
-        const newValNum = compareVersionValue(newVersion);
-        const origValNum = originalTag ? compareVersionValue(originalTag) : 0;
-        if (origValNum && newValNum && newValNum < origValNum) {
-            return originalTag;
-        }
-        return newVersion;
-    };
+    // const handleTagManualChange = (
+    //     e: React.ChangeEvent<HTMLInputElement>,
+    //     field: { onChange: (val: string) => void; value: string }
+    // ) => {
+    //     const newVal = e.target.value;
+    //     field.onChange(newVal);
+    //     if (!originalTag) return;
+    //     const newValNum = compareVersionValue(newVal);
+    //     const origValNum = compareVersionValue(originalTag);
+    //     if (!newValNum || !origValNum) {
+    //         return;
+    //     }
+    //     if (newValNum < origValNum) {
+    //         field.onChange(originalTag);
+    //     }
+    // };
+    //
+    // const incrementPatch = (fieldValue: string) => {
+    //     const version = parseVersion(fieldValue);
+    //     if (!version) return fieldValue;
+    //     const {major, minor, patch} = version;
+    //     const newPatch = patch + 1;
+    //     return `${major}.${minor}.${newPatch}`;
+    // };
+    //
+    // const decrementPatch = (fieldValue: string) => {
+    //     const version = parseVersion(fieldValue);
+    //     if (!version) return fieldValue;
+    //     let patch = version.patch;
+    //     const {major, minor} = version;
+    //     if (patch > 0) {
+    //         patch -= 1;
+    //     }
+    //     const newVersion = `${major}.${minor}.${patch}`;
+    //     const newValNum = compareVersionValue(newVersion);
+    //     const origValNum = originalTag ? compareVersionValue(originalTag) : 0;
+    //     if (origValNum && newValNum && newValNum < origValNum) {
+    //         return originalTag;
+    //     }
+    //     return newVersion;
+    // };
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (!tagSuggestions.length) return;
@@ -295,16 +297,19 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     return (
         <Card className="shadow-lg hover:shadow-xl transition-shadow h-fit bg-card text-card-foreground">
             <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-primary/10 rounded-lg">
-                        <FileText className="h-6 w-6 text-primary"/>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-primary/10 rounded-lg">
+                            <FileText className="h-6 w-6 text-primary"/>
+                        </div>
+                        <div className="">
+                            <CardTitle>Create New File</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Enter service details to generate file
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <CardTitle>Create New File</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Enter service details to generate file
-                        </p>
-                    </div>
+                    <ButtonSetting/>
                 </div>
             </CardHeader>
             <Separator className="mb-6"/>
@@ -319,9 +324,8 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2 text-foreground/80">
                                             Service Name
-                                            <span className="text-xs text-muted-foreground">
-                        (auto-format to lowercase)
-                      </span>
+                                            <span
+                                                className="text-xs text-muted-foreground">(auto-format to lowercase)</span>
                                         </FormLabel>
                                         <FormControl>
                                             <div className="relative" ref={suggestionsRef}>
@@ -348,7 +352,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                                 key={repo.id}
                                                                 onMouseDown={() => handleSuggestionClick(repo)}
                                                                 className={`px-4 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
-                                                                    highlightedIndex === index ? "bg-accent text-accent-foreground" : ""
+                                                                    highlightedIndex === index ? "bg-accent generate-text-accent-foreground" : ""
                                                                 }`}
                                                             >
                                                                 {highlightQuery(repo.name, searchTerm)}
@@ -395,7 +399,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                                 variant="outline"
                                                                 role="combobox"
                                                                 className={`w-full justify-between h-12 px-5 ${
-                                                                    field.value !== "" ? "text-foreground" : "text-muted-foreground"
+                                                                    field.value !== "" ? "generate-text-foreground" : "generate-text-muted-foreground"
                                                                 } ${
                                                                     !selectedServiceId
                                                                         ? "opacity-50 cursor-not-allowed"
@@ -426,7 +430,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                                         onMouseDown={() => handleTagSuggestionClick(tagItem)}
                                                                         className={`px-4 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
                                                                             highlightedTagIndex === index
-                                                                                ? "bg-accent text-accent-foreground"
+                                                                                ? "bg-accent generate-text-accent-foreground"
                                                                                 : ""
                                                                         }`}
                                                                     >
@@ -437,47 +441,47 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                         </PopoverContent>
                                                     </Popover>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        variant="secondary"
-                                                        type="button"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            const updated = decrementPatch(field.value);
-                                                            field.onChange(updated);
-                                                        }}
-                                                        disabled={!field.value}
-                                                    >
-                                                        -
-                                                    </Button>
-                                                    <Input
-                                                        value={field.value}
-                                                        onChange={(e) => handleTagManualChange(e, field)}
-                                                        placeholder="X.X.X"
-                                                        className="w-[120px]"
-                                                        disabled={!selectedServiceId}
-                                                    />
-                                                    <Button
-                                                        variant="secondary"
-                                                        type="button"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            const updated = incrementPatch(field.value);
-                                                            const newValNum = compareVersionValue(updated);
-                                                            const origValNum = originalTag
-                                                                ? compareVersionValue(originalTag)
-                                                                : undefined;
-                                                            if (newValNum && origValNum && newValNum < origValNum) {
-                                                                field.onChange(originalTag);
-                                                            } else {
-                                                                field.onChange(updated);
-                                                            }
-                                                        }}
-                                                        disabled={!field.value}
-                                                    >
-                                                        +
-                                                    </Button>
-                                                </div>
+                                                {/*<div className="flex items-center gap-2">*/}
+                                                {/*    <Button*/}
+                                                {/*        variant="secondary"*/}
+                                                {/*        type="button"*/}
+                                                {/*        size="sm"*/}
+                                                {/*        onClick={() => {*/}
+                                                {/*            const updated = decrementPatch(field.value);*/}
+                                                {/*            field.onChange(updated);*/}
+                                                {/*        }}*/}
+                                                {/*        disabled={!field.value}*/}
+                                                {/*    >*/}
+                                                {/*        -*/}
+                                                {/*    </Button>*/}
+                                                {/*    <Input*/}
+                                                {/*        value={field.value}*/}
+                                                {/*        onChange={(e) => handleTagManualChange(e, field)}*/}
+                                                {/*        placeholder="X.X.X"*/}
+                                                {/*        className="w-[120px]"*/}
+                                                {/*        disabled={!selectedServiceId}*/}
+                                                {/*    />*/}
+                                                {/*    <Button*/}
+                                                {/*        variant="secondary"*/}
+                                                {/*        type="button"*/}
+                                                {/*        size="sm"*/}
+                                                {/*        onClick={() => {*/}
+                                                {/*            const updated = incrementPatch(field.value);*/}
+                                                {/*            const newValNum = compareVersionValue(updated);*/}
+                                                {/*            const origValNum = originalTag*/}
+                                                {/*                ? compareVersionValue(originalTag)*/}
+                                                {/*                : undefined;*/}
+                                                {/*            if (newValNum && origValNum && newValNum < origValNum) {*/}
+                                                {/*                field.onChange(originalTag);*/}
+                                                {/*            } else {*/}
+                                                {/*                field.onChange(updated);*/}
+                                                {/*            }*/}
+                                                {/*        }}*/}
+                                                {/*        disabled={!field.value}*/}
+                                                {/*    >*/}
+                                                {/*        +*/}
+                                                {/*    </Button>*/}
+                                                {/*</div>*/}
                                             </div>
                                         </FormControl>
                                         <FormMessage className="text-xs"/>
@@ -530,7 +534,8 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                 type="submit"
                                 size="lg"
                                 disabled={isProcessing}
-                                className="w-full h-12 text-base gap-3 hover:shadow-md transition-shadow"
+                                className="h-12 w-full rounded-[8px] transition-all duration-200 cursor-pointer text-secondary
+                                hover:bg-secondary hover:text-foreground hover:shadow-[6px_6.9px] hover:border hover:border-primary hover:border-l-2 hover:border-t-2"
                             >
                                 {isProcessing ? (
                                     <span>Generating...</span>
