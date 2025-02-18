@@ -3,12 +3,14 @@ import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
-import {ChevronDown, Download, FileText, Search, Trash2,} from "lucide-react";
+import {ChevronDown, Download, FileText, Search, Settings, Trash2,} from "lucide-react";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import {Input} from "./ui/input";
 import {Button} from "@/components/ui/button";
 import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
+import {Badge} from "@/components/ui/badge";
+import {ButtonSetting} from "@/components/button-setting";
 
 const formSchema = z.object({
     serviceName: z
@@ -194,15 +196,15 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         );
     };
 
-    function parseVersion(fieldValue: string) {
-        if (!fieldValue) return null;
-        const match = fieldValue.match(/^([0-9]+)\.([0-9]+)\.([0-9]+)$/);
-        if (!match) return null;
-        const major = parseInt(match[1], 10);
-        const minor = parseInt(match[2], 10);
-        const patch = parseInt(match[3], 10);
-        return {major, minor, patch};
-    }
+    // function parseVersion(fieldValue: string) {
+    //     if (!fieldValue) return null;
+    //     const match = fieldValue.match(/^([0-9]+)\.([0-9]+)\.([0-9]+)$/);
+    //     if (!match) return null;
+    //     const major = parseInt(match[1], 10);
+    //     const minor = parseInt(match[2], 10);
+    //     const patch = parseInt(match[3], 10);
+    //     return {major, minor, patch};
+    // }
 
     // const compareVersionValue = (versionStr: string): number | undefined => {
     //     const version = parseVersion(versionStr);
@@ -295,16 +297,19 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     return (
         <Card className="shadow-lg hover:shadow-xl transition-shadow h-fit bg-card text-card-foreground">
             <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-primary/10 rounded-lg">
-                        <FileText className="h-6 w-6 text-primary"/>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-primary/10 rounded-lg">
+                            <FileText className="h-6 w-6 text-primary"/>
+                        </div>
+                        <div className="">
+                            <CardTitle>Create New File</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Enter service details to generate file
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <CardTitle>Create New File</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Enter service details to generate file
-                        </p>
-                    </div>
+                    <ButtonSetting/>
                 </div>
             </CardHeader>
             <Separator className="mb-6"/>
@@ -319,9 +324,8 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2 text-foreground/80">
                                             Service Name
-                                            <span className="text-xs text-muted-foreground">
-                        (auto-format to lowercase)
-                      </span>
+                                            <span
+                                                className="text-xs text-muted-foreground">(auto-format to lowercase)</span>
                                         </FormLabel>
                                         <FormControl>
                                             <div className="relative" ref={suggestionsRef}>
