@@ -437,47 +437,47 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                         </PopoverContent>
                                                     </Popover>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        variant="secondary"
-                                                        type="button"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            const updated = decrementPatch(field.value);
-                                                            field.onChange(updated);
-                                                        }}
-                                                        disabled={!field.value}
-                                                    >
-                                                        -
-                                                    </Button>
-                                                    <Input
-                                                        value={field.value}
-                                                        onChange={(e) => handleTagManualChange(e, field)}
-                                                        placeholder="X.X.X"
-                                                        className="w-[120px]"
-                                                        disabled={!selectedServiceId}
-                                                    />
-                                                    <Button
-                                                        variant="secondary"
-                                                        type="button"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            const updated = incrementPatch(field.value);
-                                                            const newValNum = compareVersionValue(updated);
-                                                            const origValNum = originalTag
-                                                                ? compareVersionValue(originalTag)
-                                                                : undefined;
-                                                            if (newValNum && origValNum && newValNum < origValNum) {
-                                                                field.onChange(originalTag);
-                                                            } else {
-                                                                field.onChange(updated);
-                                                            }
-                                                        }}
-                                                        disabled={!field.value}
-                                                    >
-                                                        +
-                                                    </Button>
-                                                </div>
+                                                {/*<div className="flex items-center gap-2">*/}
+                                                {/*    <Button*/}
+                                                {/*        variant="secondary"*/}
+                                                {/*        type="button"*/}
+                                                {/*        size="sm"*/}
+                                                {/*        onClick={() => {*/}
+                                                {/*            const updated = decrementPatch(field.value);*/}
+                                                {/*            field.onChange(updated);*/}
+                                                {/*        }}*/}
+                                                {/*        disabled={!field.value}*/}
+                                                {/*    >*/}
+                                                {/*        -*/}
+                                                {/*    </Button>*/}
+                                                {/*    <Input*/}
+                                                {/*        value={field.value}*/}
+                                                {/*        onChange={(e) => handleTagManualChange(e, field)}*/}
+                                                {/*        placeholder="X.X.X"*/}
+                                                {/*        className="w-[120px]"*/}
+                                                {/*        disabled={!selectedServiceId}*/}
+                                                {/*    />*/}
+                                                {/*    <Button*/}
+                                                {/*        variant="secondary"*/}
+                                                {/*        type="button"*/}
+                                                {/*        size="sm"*/}
+                                                {/*        onClick={() => {*/}
+                                                {/*            const updated = incrementPatch(field.value);*/}
+                                                {/*            const newValNum = compareVersionValue(updated);*/}
+                                                {/*            const origValNum = originalTag*/}
+                                                {/*                ? compareVersionValue(originalTag)*/}
+                                                {/*                : undefined;*/}
+                                                {/*            if (newValNum && origValNum && newValNum < origValNum) {*/}
+                                                {/*                field.onChange(originalTag);*/}
+                                                {/*            } else {*/}
+                                                {/*                field.onChange(updated);*/}
+                                                {/*            }*/}
+                                                {/*        }}*/}
+                                                {/*        disabled={!field.value}*/}
+                                                {/*    >*/}
+                                                {/*        +*/}
+                                                {/*    </Button>*/}
+                                                {/*</div>*/}
                                             </div>
                                         </FormControl>
                                         <FormMessage className="text-xs"/>

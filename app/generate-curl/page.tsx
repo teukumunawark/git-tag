@@ -61,7 +61,6 @@ export default function GenerateCurl() {
                 curlCmdPretty += ` \\\n--data '${formattedBody}'`;
             }
 
-            // Membuat cURL command dalam format single-line
             let curlCmdSingleLine = `curl --silent --location --request ${method} '${url}'`;
             Object.entries(headers).forEach(([key, value]) => {
                 curlCmdSingleLine += ` --header '${key}: ${value}'`;
@@ -100,7 +99,7 @@ export default function GenerateCurl() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 py-4 w-full">
+        <div className="mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 py-4 w-full">
             {/* Input Section */}
             <Card className="min-w-0 shadow-lg">
                 <CardHeader className="pb-3">
@@ -190,7 +189,7 @@ export default function GenerateCurl() {
 
                         {['pretty', 'single-line'].map((format) => (
                             <TabsContent key={format} value={format}>
-                                <div className="relative rounded-lg bg-foreground/5 p-4">
+                                <div className="relative rounded-lg bg-foreground/5 p-4 ">
                                     <ScrollArea
                                         className={`h-[390px] ${wrapLines ? 'whitespace-pre-wrap' : 'whitespace-pre'}`}
                                     >
@@ -204,18 +203,13 @@ export default function GenerateCurl() {
                                     </ScrollArea>
 
                                     <div className="absolute top-3 right-3 flex space-x-2">
-                                        <Badge variant="secondary" className="text-xs">
-                                            {format === 'pretty'
-                                                ? curlCommandPretty.split(' ')[4]
-                                                : curlCommandSingleLine.split(' ')[4]}
-                                        </Badge>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <Button
                                                     variant="default"
                                                     size="icon"
                                                     onClick={() => copyToClipboard(format)}
-                                                    className="h-8 w-8 hover:bg-primary/10"
+                                                    className="h-8 w-8 "
                                                 >
                                                     <Clipboard className="h-4 w-4 text-white dark:text-black" />
                                                 </Button>

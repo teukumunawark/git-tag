@@ -32,10 +32,10 @@ export function NavMain({
                                 tooltip={item.title}
                                 onClick={() => router.push(item.url)}
                                 className={cn(
-                                    "flex items-center h-11 gap-3 px-4 py-3 rounded-[8px] transition-all duration-200 cursor-pointer",
+                                    "flex items-center h-11 gap-3 px-3 py-3 rounded-[8px] transition-all duration-200 cursor-pointer",
                                     "hover:bg-accent/50",
                                     item.isActive
-                                        ? "bg-primary/10 text-primary font-semibold border-r-[3px] border-b-[3px] border-primary"
+                                        ? "bg-primary/10 text-primary font-semibold border-primary shadow-[5px_6px]"
                                         : "text-muted-foreground hover:text-foreground"
                                 )}
                             >
