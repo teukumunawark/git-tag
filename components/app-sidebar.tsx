@@ -32,12 +32,7 @@ const data = {
             title: "Generate cURL",
             url: "/generate-curl",
             icon: CurlyBraces,
-        },
-        // {
-        //     title: "Settings",
-        //     url: "/settings",
-        //     icon: Settings2,
-        // },
+        }
     ]
 }
 
@@ -51,7 +46,7 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
             <SidebarHeader>
                 <SquadDua teams={data.teams}/>
             </SidebarHeader>
-            <SidebarContent>
+            <SidebarContent className="me-2">
                 <NavMain items={data.navMain.map(item => ({
                     ...item,
                     isActive: pathname === item.url,

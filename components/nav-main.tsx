@@ -32,16 +32,16 @@ export function NavMain({
                                 tooltip={item.title}
                                 onClick={() => router.push(item.url)}
                                 className={cn(
-                                    "flex items-center h-11 gap-3 px-3 py-3 rounded-[8px] transition-all duration-200 cursor-pointer",
+                                    "flex items-center h-12 gap-3 px-2 rounded-[8px] transition-all duration-200 cursor-pointer",
                                     "hover:bg-accent/50",
                                     item.isActive
-                                        ? "bg-primary/10 text-primary font-semibold border-primary shadow-[5px_6px]"
-                                        : "text-muted-foreground hover:text-foreground"
+                                        ? "bg-primary/10 text-primary font-semibold shadow-[5px_6px]"
+                                        : "text-muted-foreground hover:text-foreground hover:shadow-[3px_4px]"
                                 )}
                             >
                                 {item.icon && (
                                     <item.icon className={cn(
-                                        "w-5 h-5 transition-colors",
+                                        "min-w-5 min-h-5 transition-colors",
                                         item.isActive ? "text-primary" : "text-muted-foreground"
                                     )}/>
                                 )}

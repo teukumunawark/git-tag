@@ -75,11 +75,11 @@ export function ModeToggle() {
             <DropdownMenuContent
                 align={open ? "end" : "start"}
                 className={cn(
-                    "min-w-[200px] rounded-lg p-2 shadow-xl",
+                    "min-w-[222px] rounded-lg p-2 shadow-xl",
                     "bg-background/95 backdrop-blur-md",
                     "border border-primary/20",
                     "transition-all duration-200",
-                    isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"
+                    isOpen ? "scale-100 opacity-100 space-y-2" : "scale-95 opacity-0"
                 )}
             >
                 {/* Light Mode */}
