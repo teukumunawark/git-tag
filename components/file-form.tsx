@@ -3,13 +3,12 @@ import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
-import {ChevronDown, Download, FileText, Search, Settings, Trash2,} from "lucide-react";
+import {ChevronDown, Download, FileText, Search, Trash2,} from "lucide-react";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import {Input} from "./ui/input";
 import {Button} from "@/components/ui/button";
 import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
-import {Badge} from "@/components/ui/badge";
 import {ButtonSetting} from "@/components/button-setting";
 
 const formSchema = z.object({
@@ -70,7 +69,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(
         null
     );
-    const [originalTag, setOriginalTag] = useState<string>("");
+    const [_, setOriginalTag] = useState<string>("");
     const [showTagDropdown, setShowTagDropdown] = useState(false);
     const [highlightedTagIndex, setHighlightedTagIndex] = useState(-1);
     const suggestionsRef = useRef<HTMLDivElement>(null);
