@@ -1,15 +1,14 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
-import {ChevronDown, Download, FileText, Search, Settings, Trash2,} from "lucide-react";
+import {ChevronDown, Download, FileText, Search, Trash2,} from "lucide-react";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card";
 import {Separator} from "@/components/ui/separator";
 import {Input} from "./ui/input";
 import {Button} from "@/components/ui/button";
 import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
-import {Badge} from "@/components/ui/badge";
 import {ButtonSetting} from "@/components/button-setting";
 
 const formSchema = z.object({
@@ -70,7 +69,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
     const [selectedServiceId, setSelectedServiceId] = useState<number | null>(
         null
     );
-    const [originalTag, setOriginalTag] = useState<string>("");
+    const [_, setOriginalTag] = useState<string>("");
     const [showTagDropdown, setShowTagDropdown] = useState(false);
     const [highlightedTagIndex, setHighlightedTagIndex] = useState(-1);
     const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -84,18 +83,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             setBaseURL(storedURL);
         }
     }, []);
-
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (searchTerm.trim().length > 0) {
-                fetchRepositorySuggestions(searchTerm.trim());
-            } else {
-                setRepositorySuggestions([]);
-                setShowSuggestions(false);
-            }
-        }, 400);
-        return () => clearTimeout(timeout);
-    }, [searchTerm]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -114,7 +101,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         };
     }, []);
 
-    const fetchRepositorySuggestions = async (query: string) => {
+    const fetchRepositorySuggestions = useCallback(async (query: string) => {
         try {
             const response = await fetch(`${baseURL}/repository?search=${query}`);
             if (!response.ok) return;
@@ -125,8 +112,22 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
             setRepositorySuggestions(filtered);
             setShowSuggestions(true);
         } catch (_) {
+            // Handle error silently
         }
-    };
+    }, [baseURL]);
+
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (searchTerm.trim().length > 0) {
+                fetchRepositorySuggestions(searchTerm.trim());
+            } else {
+                setRepositorySuggestions([]);
+                setShowSuggestions(false);
+            }
+        }, 400);
+        return () => clearTimeout(timeout);
+    }, [searchTerm, fetchRepositorySuggestions]);
 
     const fetchTagSuggestions = async (repoId: number) => {
         try {
