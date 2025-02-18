@@ -23,7 +23,7 @@ export default function Home() {
             <div className="w-3/4">
                 <TrueFocus
                     sentence="INTRODUCING THE AMBITIOUS PROJECT SQUAD-2"
-                    manualMode={false}
+                    manualMode={true}
                     blurAmount={5}
                     borderColor="red"
                     animationDuration={1}

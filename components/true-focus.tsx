@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -19,7 +21,7 @@ interface FocusRect {
 }
 
 const TrueFocus: React.FC<TrueFocusProps> = ({
-                                                 sentence = "This Is SQUAD 2 PROJECT",
+                                                 sentence = "True Focus",
                                                  manualMode = false,
                                                  blurAmount = 5,
                                                  borderColor = "green",
@@ -82,6 +84,7 @@ const TrueFocus: React.FC<TrueFocusProps> = ({
                 return (
                     <span
                         key={index}
+                        ref={(el) => (wordRefs.current[index] = el)}
                         className="relative text-[3rem] font-black cursor-pointer"
                         style={{
                             filter: manualMode
