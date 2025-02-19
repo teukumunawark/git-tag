@@ -1,14 +1,8 @@
-"use client"
-
-import {useRouter} from "next/navigation"
 import {ChevronRight, type LucideIcon} from "lucide-react"
-import {cn} from "@/lib/utils"
-import {motion} from "framer-motion"
 import {SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem} from "@/components/ui/sidebar"
+import Link from "next/link"
 
-export function NavMain({
-                            items,
-                        }: {
+export function NavMain({items}: {
     items: {
         title: string
         url: string
@@ -16,57 +10,23 @@ export function NavMain({
         isActive?: boolean
     }[]
 }) {
-    const router = useRouter()
 
     return (
-        <SidebarGroup className="pt-5">
-            <SidebarMenu className="space-y-2">
+        <SidebarGroup>
+            <SidebarMenu className="space-y-3 pe-2 ps-1">
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                        <motion.div
-                            whileHover={{scale: 1.02}}
-                            whileTap={{scale: 0.98}}
-                            className="relative"
-                        >
+                        <Link href={item.url} passHref legacyBehavior>
                             <SidebarMenuButton
                                 tooltip={item.title}
-                                onClick={() => router.push(item.url)}
-                                className={cn(
-                                    "flex items-center h-12 gap-3 px-2 rounded-[8px] transition-all duration-200 cursor-pointer",
-                                    "hover:bg-accent/50",
-                                    item.isActive
-                                        ? "bg-primary/10 text-primary font-semibold shadow-[5px_6px]"
-                                        : "text-muted-foreground hover:text-foreground hover:shadow-[3px_4px]"
-                                )}
-                            >
-                                {item.icon && (
-                                    <item.icon className={cn(
-                                        "min-w-5 min-h-5 transition-colors",
-                                        item.isActive ? "text-primary" : "text-muted-foreground"
-                                    )}/>
-                                )}
-
-                                <span className="truncate">{item.title}</span>
-
-                                {item.isActive && (
-                                    <motion.div
-                                        initial={{opacity: 0, x: -10}}
-                                        animate={{opacity: 1, x: 0}}
-                                        className="ml-auto"
-                                    >
-                                        <ChevronRight className="h-4 w-4 text-primary"/>
-                                    </motion.div>
-                                )}
-                            </SidebarMenuButton>
-
-                            {item.isActive && (
-                                <motion.div
-                                    className="absolute inset-0 bg-primary/10 rounded-lg"
-                                    layoutId="activeMenuItem"
-                                    transition={{type: "spring", stiffness: 300, damping: 30}}
+                                className={`h-14 ${item.isActive && `bg-secondary shadow-[6px_6.4px] drop-shadow border border-primary text-primary font-semibold`}`}>
+                                <div>{item.icon && <item.icon/>}</div>
+                                <span>{item.title}</span>
+                                <ChevronRight
+                                    className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
                                 />
-                            )}
-                        </motion.div>
+                            </SidebarMenuButton>
+                        </Link>
                     </SidebarMenuItem>
                 ))}
             </SidebarMenu>

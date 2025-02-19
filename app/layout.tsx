@@ -5,7 +5,6 @@ import {ThemeProvider} from "@/components/theme-provider"
 import {Toaster} from "@/components/ui/toaster";
 import {SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
 import {AppSidebar} from "@/components/app-sidebar";
-import {cookies} from "next/headers";
 
 
 const geistSans = localFont({
@@ -26,7 +25,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider
             attribute="class"
