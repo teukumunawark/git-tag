@@ -197,69 +197,11 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
         );
     };
 
-    // function parseVersion(fieldValue: string) {
-    //     if (!fieldValue) return null;
-    //     const match = fieldValue.match(/^([0-9]+)\.([0-9]+)\.([0-9]+)$/);
-    //     if (!match) return null;
-    //     const major = parseInt(match[1], 10);
-    //     const minor = parseInt(match[2], 10);
-    //     const patch = parseInt(match[3], 10);
-    //     return {major, minor, patch};
-    // }
-
-    // const compareVersionValue = (versionStr: string): number | undefined => {
-    //     const version = parseVersion(versionStr);
-    //     if (!version) return undefined;
-    //     return version.major * 10000 + version.minor * 100 + version.patch;
-    // };
-
     const handleTagSuggestionClick = (tagItem: Tag) => {
         form.setValue("tag", tagItem.name, {shouldValidate: true});
         setOriginalTag(tagItem.name);
         setShowTagDropdown(false);
     };
-
-    // const handleTagManualChange = (
-    //     e: React.ChangeEvent<HTMLInputElement>,
-    //     field: { onChange: (val: string) => void; value: string }
-    // ) => {
-    //     const newVal = e.target.value;
-    //     field.onChange(newVal);
-    //     if (!originalTag) return;
-    //     const newValNum = compareVersionValue(newVal);
-    //     const origValNum = compareVersionValue(originalTag);
-    //     if (!newValNum || !origValNum) {
-    //         return;
-    //     }
-    //     if (newValNum < origValNum) {
-    //         field.onChange(originalTag);
-    //     }
-    // };
-    //
-    // const incrementPatch = (fieldValue: string) => {
-    //     const version = parseVersion(fieldValue);
-    //     if (!version) return fieldValue;
-    //     const {major, minor, patch} = version;
-    //     const newPatch = patch + 1;
-    //     return `${major}.${minor}.${newPatch}`;
-    // };
-    //
-    // const decrementPatch = (fieldValue: string) => {
-    //     const version = parseVersion(fieldValue);
-    //     if (!version) return fieldValue;
-    //     let patch = version.patch;
-    //     const {major, minor} = version;
-    //     if (patch > 0) {
-    //         patch -= 1;
-    //     }
-    //     const newVersion = `${major}.${minor}.${patch}`;
-    //     const newValNum = compareVersionValue(newVersion);
-    //     const origValNum = originalTag ? compareVersionValue(originalTag) : 0;
-    //     if (origValNum && newValNum && newValNum < origValNum) {
-    //         return originalTag;
-    //     }
-    //     return newVersion;
-    // };
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (!tagSuggestions.length) return;
@@ -442,47 +384,6 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                                         </PopoverContent>
                                                     </Popover>
                                                 </div>
-                                                {/*<div className="flex items-center gap-2">*/}
-                                                {/*    <Button*/}
-                                                {/*        variant="secondary"*/}
-                                                {/*        type="button"*/}
-                                                {/*        size="sm"*/}
-                                                {/*        onClick={() => {*/}
-                                                {/*            const updated = decrementPatch(field.value);*/}
-                                                {/*            field.onChange(updated);*/}
-                                                {/*        }}*/}
-                                                {/*        disabled={!field.value}*/}
-                                                {/*    >*/}
-                                                {/*        -*/}
-                                                {/*    </Button>*/}
-                                                {/*    <Input*/}
-                                                {/*        value={field.value}*/}
-                                                {/*        onChange={(e) => handleTagManualChange(e, field)}*/}
-                                                {/*        placeholder="X.X.X"*/}
-                                                {/*        className="w-[120px]"*/}
-                                                {/*        disabled={!selectedServiceId}*/}
-                                                {/*    />*/}
-                                                {/*    <Button*/}
-                                                {/*        variant="secondary"*/}
-                                                {/*        type="button"*/}
-                                                {/*        size="sm"*/}
-                                                {/*        onClick={() => {*/}
-                                                {/*            const updated = incrementPatch(field.value);*/}
-                                                {/*            const newValNum = compareVersionValue(updated);*/}
-                                                {/*            const origValNum = originalTag*/}
-                                                {/*                ? compareVersionValue(originalTag)*/}
-                                                {/*                : undefined;*/}
-                                                {/*            if (newValNum && origValNum && newValNum < origValNum) {*/}
-                                                {/*                field.onChange(originalTag);*/}
-                                                {/*            } else {*/}
-                                                {/*                field.onChange(updated);*/}
-                                                {/*            }*/}
-                                                {/*        }}*/}
-                                                {/*        disabled={!field.value}*/}
-                                                {/*    >*/}
-                                                {/*        +*/}
-                                                {/*    </Button>*/}
-                                                {/*</div>*/}
                                             </div>
                                         </FormControl>
                                         <FormMessage className="text-xs"/>
@@ -536,7 +437,7 @@ export const FileForm: React.FC<FileFormProps> = ({onSubmit, isProcessing}) => {
                                 size="lg"
                                 disabled={isProcessing}
                                 className="h-12 w-full rounded-[8px] transition-all duration-200 cursor-pointer text-secondary
-                                hover:bg-secondary hover:text-foreground hover:shadow-[6px_6.9px] hover:border hover:border-primary hover:border-l-2 hover:border-t-2"
+                                hover:bg-secondary hover:text-foreground hover:shadow-[6px_6.9px] hover:border-primary hover:border"
                             >
                                 {isProcessing ? (
                                     <span>Generating...</span>

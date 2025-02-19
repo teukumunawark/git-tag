@@ -39,18 +39,17 @@ const data = {
 export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
     const pathname = usePathname();
 
-    console.log(pathname)
-
     return (
-        <Sidebar collapsible="icon" {...props} variant="floating">
+        <Sidebar collapsible="offcanvas" {...props} variant="floating">
             <SidebarHeader>
                 <SquadDua teams={data.teams}/>
             </SidebarHeader>
-            <SidebarContent className="me-2">
+            <SidebarContent>
                 <NavMain items={data.navMain.map(item => ({
-                    ...item,
-                    isActive: pathname === item.url,
-                }))}/>
+                        ...item,
+                        isActive: pathname === item.url,
+                    })
+                )}/>
             </SidebarContent>
             <SidebarFooter>
                 <ModeToggle/>

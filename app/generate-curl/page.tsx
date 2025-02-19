@@ -35,7 +35,7 @@ export default function GenerateCurl() {
         try {
             const jsonData = JSON.parse(jsonInput);
             const baseUrl = jsonData.fields?.request?.url || "http://localhost:8080";
-            const uri =  jsonData._source.request?.uri
+            const uri = jsonData._source.request?.uri
             const method = jsonData._source?.request?.http_method.toUpperCase() || "POST";
             const contextHeaders = jsonData._source?.context || {};
             const requestHeaders = jsonData.fields?.request?.headers || {};
@@ -92,7 +92,7 @@ export default function GenerateCurl() {
         }
     };
 
-    const copyToClipboard = (format : string) => {
+    const copyToClipboard = (format: string) => {
         const textToCopy = format === "pretty" ? curlCommandPretty : curlCommandSingleLine;
         navigator.clipboard.writeText(textToCopy);
         toast({
@@ -124,7 +124,8 @@ export default function GenerateCurl() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="relative rounded-lg border bg-background focus-within:ring-2 focus-within:ring-primary">
+                    <div
+                        className="relative rounded-lg border bg-background focus-within:ring-2 focus-within:ring-primary">
                         <ScrollArea className="h-fit">
                             <textarea
                                 id="json-input"
@@ -134,7 +135,8 @@ export default function GenerateCurl() {
                                 onChange={(e) => setJsonInput(e.target.value)}
                             />
                         </ScrollArea>
-                        <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-muted-foreground">
+                        <div
+                            className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-muted-foreground">
                             {jsonInput.split(/\r\n|\r|\n/).length} lines
                         </div>
                     </div>
@@ -142,17 +144,18 @@ export default function GenerateCurl() {
                     <Button
                         onClick={generateCurlCommand}
                         disabled={!isValidJson || isLoading}
-                        className="w-full mt-4 h-12 text-lg shadow-md transition-transform hover:scale-[1.02] text-secondary"
+                        className="w-full mt-4 h-12 text-lg shadow-md transition-all duration-200 hover:scale-[1.02] text-secondary
+                        hover:bg-secondary hover:text-foreground hover:shadow-[6px_6.9px] hover:border-primary hover:border"
                     >
                         {isLoading ? (
                             <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin"/>
                                 Crafting cURL...
                             </>
                         ) : (
                             <>
                                 Generate cURL
-                                <ChevronRight className="ml-2 h-5 w-5" />
+                                <ChevronRight className="ml-2 h-5 w-5"/>
                             </>
                         )}
                     </Button>
@@ -214,7 +217,7 @@ export default function GenerateCurl() {
                                                     onClick={() => copyToClipboard(format)}
                                                     className="h-8 w-8"
                                                 >
-                                                    <Clipboard className="h-4 w-4 text-secondary" />
+                                                    <Clipboard className="h-4 w-4 text-secondary"/>
                                                 </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>

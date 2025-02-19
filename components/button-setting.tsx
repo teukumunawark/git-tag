@@ -1,4 +1,4 @@
-import {CheckCircle2, Loader2, MonitorCheck, Settings} from "lucide-react";
+import {CheckCircle2, Loader2, MonitorCheck, XCircle} from "lucide-react";
 import {Badge} from "@/components/ui/badge";
 import React, {useEffect, useState} from "react";
 import {
@@ -12,7 +12,7 @@ import {
 import {Input} from "@/components/ui/input";
 import {motion} from "framer-motion";
 import {Button} from "@/components/ui/button";
-
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 
 export function ButtonSetting() {
     const [showSettings, setShowSettings] = useState(false);
@@ -22,6 +22,7 @@ export function ButtonSetting() {
     const [successMsg, setSuccessMsg] = useState("");
     const [isTesting, setIsTesting] = useState(false);
     const [forceOpenSettings, setForceOpenSettings] = useState(false);
+    const [connectionFailed, setConnectionFailed] = useState(false);
 
     useEffect(() => {
         const storedURL = localStorage.getItem("baseURL");
@@ -46,11 +47,15 @@ export function ButtonSetting() {
                 setErrorMsg("Connection lost, please update your server address.");
                 setForceOpenSettings(true);
                 setShowSettings(true);
+                setConnectionFailed(true);
+            } else {
+                setConnectionFailed(false);
             }
         } catch (_) {
             setErrorMsg("Connection lost, please update your server address.");
             setForceOpenSettings(true);
             setShowSettings(true);
+            setConnectionFailed(true);
         }
     }
 
@@ -68,17 +73,18 @@ export function ButtonSetting() {
                 localStorage.setItem("baseURL", baseURL.trim());
                 setOnboard(false);
                 setForceOpenSettings(false);
+                setConnectionFailed(false);
                 setTimeout(() => {
                     setShowSettings(false);
                 }, 1500);
             }
         } catch (_) {
             setErrorMsg("Connection failed. Please check your server.");
+            setConnectionFailed(true);
         } finally {
             setIsTesting(false);
         }
     };
-
 
     return (
         <div>
@@ -93,7 +99,20 @@ export function ButtonSetting() {
                     }}
                     className="py-2 text-secondary cursor-pointer"
                 >
-                    {!onboard ? <MonitorCheck className="text-green-500"/> : <Settings className="text-secondary"/>}
+                    {connectionFailed ? (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <XCircle className="text-red-500"/>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="text-secondary">Try Again</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                    ) : (
+                        <MonitorCheck className="text-green-500"/>
+                    )}
                 </Badge>
             )}
 
@@ -102,7 +121,7 @@ export function ButtonSetting() {
                 onOpenChange={onboard ? undefined : (val: boolean) => !forceOpenSettings && setShowSettings(val)}
                 title="Base URL Settings"
                 description={onboard ? "Please connect to your backend server." : "Enter the URL for your backend API."}
-                showCloseButton={!onboard && !forceOpenSettings}
+                showCloseButton={!onboard}
                 onClose={() => {
                     setShowSettings(false);
                     setErrorMsg("");
@@ -119,85 +138,86 @@ export function ButtonSetting() {
     );
 }
 
-const BaseUrlDialog: React.FC<BaseUrlDialogProps> = ({
-                                                         open,
-                                                         onOpenChange,
-                                                         title,
-                                                         description,
-                                                         showCloseButton,
-                                                         onClose,
-                                                         baseURL,
-                                                         setBaseURL,
-                                                         errorMsg,
-                                                         successMsg,
-                                                         isTesting,
-                                                         onTestConnection,
-                                                     }) =>
-    (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] [&>button]:hidden">
-                <DialogHeader>
-                    <DialogTitle>{title}</DialogTitle>
-                    <DialogDescription>{description}</DialogDescription>
-                </DialogHeader>
+const BaseUrlDialog: React.FC<BaseUrlDialogProps> =
+    ({
+         open,
+         onOpenChange,
+         title,
+         description,
+         showCloseButton,
+         onClose,
+         baseURL,
+         setBaseURL,
+         errorMsg,
+         successMsg,
+         isTesting,
+         onTestConnection,
+     }) =>
+        (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="sm:max-w-[425px] [&>button]:hidden">
+                    <DialogHeader>
+                        <DialogTitle>{title}</DialogTitle>
+                        <DialogDescription>{description}</DialogDescription>
+                    </DialogHeader>
 
-                <div className="flex flex-col gap-2">
-                    <label className="text-sm text-muted-foreground" htmlFor="baseURL">
-                        Base URL
-                    </label>
-                    <Input
-                        id="baseURL"
-                        placeholder="http://localhost:8080"
-                        value={baseURL}
-                        onChange={(e) => setBaseURL(e.target.value)}
-                    />
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm text-muted-foreground" htmlFor="baseURL">
+                            Base URL
+                        </label>
+                        <Input
+                            id="baseURL"
+                            placeholder="http://localhost:8080"
+                            value={baseURL}
+                            onChange={(e) => setBaseURL(e.target.value)}
+                        />
 
-                    {errorMsg && (
-                        <motion.p
-                            className="text-sm text-red-500 mt-1"
-                            initial={{opacity: 0}}
-                            animate={{opacity: 1}}
-                        >
-                            {errorMsg}
-                        </motion.p>
-                    )}
-
-                    {successMsg && (
-                        <motion.p
-                            className="flex items-center text-sm text-green-500 mt-1"
-                            initial={{scale: 0.9, opacity: 0}}
-                            animate={{scale: 1, opacity: 1}}
-                        >
-                            <CheckCircle2 className="mr-2 h-4 w-4"/>
-                            {successMsg}
-                        </motion.p>
-                    )}
-                </div>
-
-                <DialogFooter>
-                    {showCloseButton && (
-                        <Button variant="outline" onClick={onClose}>
-                            Close
-                        </Button>
-                    )}
-                    <Button
-                        onClick={onTestConnection}
-                        disabled={!baseURL.trim() || isTesting}
-                        className={showCloseButton ? "text-secondary" : "w-full justify-center text-secondary"}
-                    >
-                        {isTesting ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                                Connecting...
-                            </>
-                        ) : (
-                            "Test Connection"
+                        {errorMsg && (
+                            <motion.p
+                                className="text-sm text-red-500 mt-1"
+                                initial={{opacity: 0}}
+                                animate={{opacity: 1}}
+                            >
+                                {errorMsg}
+                            </motion.p>
                         )}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
+
+                        {successMsg && (
+                            <motion.p
+                                className="flex items-center text-sm text-green-500 mt-1"
+                                initial={{scale: 0.9, opacity: 0}}
+                                animate={{scale: 1, opacity: 1}}
+                            >
+                                <CheckCircle2 className="mr-2 h-4 w-4"/>
+                                {successMsg}
+                            </motion.p>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        {showCloseButton && (
+                            <Button variant="outline" onClick={onClose}>
+                                Close
+                            </Button>
+                        )}
+                        <Button
+                            onClick={onTestConnection}
+                            disabled={!baseURL.trim() || isTesting}
+                            className={showCloseButton ? "text-secondary" : "w-full justify-center text-secondary"}
+                        >
+                            {isTesting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                    Connecting...
+                                </>
+                            ) : (
+                                "Test Connection"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        );
 
 interface BaseUrlDialogProps {
     open: boolean;
