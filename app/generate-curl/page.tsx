@@ -108,7 +108,7 @@ export default function GenerateCurl() {
                 <CardHeader className="pb-3">
                     <div className="flex justify-between items-center">
                         <div className="space-y-1">
-                            <CardTitle className="text-xl font-semibold">JSON Input</CardTitle>
+                            <CardTitle className="text-xl font-semibold">JSON INPUT</CardTitle>
                             <Label className="text-sm text-muted-foreground">
                                 Paste your JSON data below
                             </Label>
@@ -167,7 +167,7 @@ export default function GenerateCurl() {
                 <CardHeader className="pb-3">
                     <div className="flex justify-between items-center">
                         <div className="space-y-1">
-                            <CardTitle className="text-xl font-semibold">cURL Output</CardTitle>
+                            <CardTitle className="text-xl font-semibold">CURL OUTPUT</CardTitle>
                             <Label className="text-sm text-muted-foreground">
                                 Ready-to-use command in multiple formats
                             </Label>
