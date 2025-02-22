@@ -1,9 +1,8 @@
 "use client";
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
-import {ChevronRight, Clipboard, Loader2} from "lucide-react";
-import {ToastAction} from "@/components/ui/toast";
+import {ChevronRight, Clipboard, ClipboardCheck, Loader2} from "lucide-react";
 import {Badge} from "@/components/ui/badge";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 import {useToast} from "@/hooks/use-toast";
@@ -11,94 +10,52 @@ import {ScrollArea} from "@/components/ui/scroll-area";
 import {Label} from "@/components/ui/label";
 import {Switch} from "@/components/ui/switch";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import useCurlGenerator from "@/hooks/use-curl-generator";
+
 
 export default function GenerateCurl() {
-    const [jsonInput, setJsonInput] = useState("");
-    const [curlCommandPretty, setCurlCommandPretty] = useState("");
-    const [curlCommandSingleLine, setCurlCommandSingleLine] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    const [jsonInput, setJsonInput] = useState('');
     const [isValidJson, setIsValidJson] = useState(true);
     const [wrapLines, setWrapLines] = useState(true);
     const {toast} = useToast();
+    const {
+        curlCommandPretty,
+        curlCommandSingleLine,
+        isLoading,
+        copied,
+        generateCurlCommand,
+        copyToClipboard,
+    } = useCurlGenerator();
+
+    const isValidJsonInput = useMemo(() => (input: string): boolean => {
+        if (!input) return true;
+        try {
+            JSON.parse(input);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }, []);
 
     useEffect(() => {
-        try {
-            JSON.parse(jsonInput);
-            setIsValidJson(true);
-        } catch (_) {
-            setIsValidJson(jsonInput.length <= 0);
-        }
-    }, [jsonInput]);
+        setIsValidJson(isValidJsonInput(jsonInput));
+    }, [jsonInput, isValidJsonInput]);
 
-    const generateCurlCommand = async () => {
-        setIsLoading(true);
+    const handleSubmit = async () => {
         try {
             const jsonData = JSON.parse(jsonInput);
-            const baseUrl = jsonData.fields?.request?.url || "http://localhost:8080";
-            const uri = jsonData._source.request?.uri
-            const method = jsonData._source?.request?.http_method.toUpperCase() || "POST";
-            const contextHeaders = jsonData._source?.context || {};
-            const requestHeaders = jsonData.fields?.request?.headers || {};
-            const headers = {
-                ...Object.fromEntries(
-                    Object.entries(contextHeaders).filter(([_, value]) => value !== null && value !== "")
-                ),
-                ...Object.fromEntries(
-                    Object.entries(requestHeaders).filter(([_, value]) => value !== null && value !== "")
-                ),
-            };
-
-            const body = jsonData._source?.request?.body;
-            const fullUrl = baseUrl + uri;
-
-            if (!headers["Content-Type"] && body) {
-                headers["Content-Type"] = "application/json";
-            }
-
-            let curlCmdPretty = `curl --silent --location --request ${method} '${fullUrl}'`;
-            Object.entries(headers).forEach(([key, value]) => {
-                curlCmdPretty += ` \\\n--header '${key}: ${value}'`;
-            });
-            if (body) {
-                const formattedBody = JSON.stringify(body, null, 2);
-                curlCmdPretty += ` \\\n--data '${formattedBody}'`;
-            }
-
-            let curlCmdSingleLine = `curl --silent --location --request ${method} '${fullUrl}'`;
-            Object.entries(headers).forEach(([key, value]) => {
-                curlCmdSingleLine += ` --header '${key}: ${value}'`;
-            });
-            if (body) {
-                const formattedBody = JSON.stringify(body);
-                curlCmdSingleLine += ` --data '${formattedBody}'`;
-            }
-
-            setCurlCommandPretty(curlCmdPretty);
-            setCurlCommandSingleLine(curlCmdSingleLine);
-
+            await generateCurlCommand(jsonData);
             toast({
                 title: "cURL generated successfully",
                 description: "You can now copy the command in your preferred format",
             });
         } catch (_) {
             toast({
-                variant: "destructive",
-                title: "Invalid JSON format",
-                description: "Please check your JSON input and try again",
-                action: <ToastAction altText="Try again">Try again</ToastAction>,
+                variant: 'destructive',
+                title: 'Invalid JSON',
+                description: 'Please check your JSON input.',
             });
-        } finally {
-            setIsLoading(false);
         }
-    };
-
-    const copyToClipboard = (format: string) => {
-        const textToCopy = format === "pretty" ? curlCommandPretty : curlCommandSingleLine;
-        navigator.clipboard.writeText(textToCopy);
-        toast({
-            title: "Copied to clipboard!",
-            description: `cURL command (${format === "pretty" ? "formatted" : "single-line"}) is ready to use`,
-        });
     };
 
     return (
@@ -142,9 +99,9 @@ export default function GenerateCurl() {
                     </div>
 
                     <Button
-                        onClick={generateCurlCommand}
+                        onClick={handleSubmit}
                         disabled={!isValidJson || isLoading}
-                        className="w-full mt-4 h-12 text-lg shadow-md transition-all duration-200 hover:scale-[1.02] text-secondary
+                        className="w-full mt-4 h-12 text-lg shadow-md transition-all duration-200 hover:scale- text-secondary
                         hover:bg-secondary hover:text-foreground hover:shadow-[6px_6.9px] hover:border-primary hover:border"
                     >
                         {isLoading ? (
@@ -213,11 +170,17 @@ export default function GenerateCurl() {
                                             <TooltipTrigger asChild>
                                                 <Button
                                                     variant="default"
-                                                    size="icon"
+                                                    size="default"
                                                     onClick={() => copyToClipboard(format)}
-                                                    className="h-8 w-8"
+                                                    className={`h-10 w-10 transition-colors duration-300`}
                                                 >
-                                                    <Clipboard className="h-4 w-4 text-secondary"/>
+                                                    {copied ? (
+                                                        <ClipboardCheck
+                                                            className="min-h-5 min-w-5 text-green-500 transition-transform duration-200"
+                                                            style={{strokeWidth: '2.5'}}/>
+                                                    ) : (
+                                                        <Clipboard className="min-h-5 min-w-5 text-secondary"/>
+                                                    )}
                                                 </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>
