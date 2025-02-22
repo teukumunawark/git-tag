@@ -47,7 +47,6 @@ const useCurlGenerator = () => {
 
     const generateCurlCommand = useCallback(async (jsonData: unknown) => {
         setIsLoading(true);
-        setCopied(false);
         try {
             const {data, error, success} = jsonDataSchema.safeParse(jsonData);
             if (!success) {
@@ -57,7 +56,7 @@ const useCurlGenerator = () => {
 
             const {_source} = data as ValidatedJsonData;
             const baseUrl = 'http://localhost:8080';
-            const uri = _source?.request?.uri || 'unknown uri';
+            const uri = _source?.request?.uri || '/unknown uri';
             const method = _source?.request?.http_method?.toUpperCase() || 'unknown method';
             const headers = _source?.request?.headers || {};
             const body = _source?.request?.body;
@@ -84,6 +83,7 @@ const useCurlGenerator = () => {
             throw error;
         } finally {
             setIsLoading(false);
+            setCopied(false);
         }
     }, []);
 

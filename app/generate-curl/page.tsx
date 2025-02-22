@@ -17,6 +17,7 @@ export default function GenerateCurl() {
     const [jsonInput, setJsonInput] = useState('');
     const [isValidJson, setIsValidJson] = useState(true);
     const [wrapLines, setWrapLines] = useState(true);
+    const [curlGenerated, setCurlGenerated] = useState(false);
     const {toast} = useToast();
     const {
         curlCommandPretty,
@@ -39,6 +40,9 @@ export default function GenerateCurl() {
 
     useEffect(() => {
         setIsValidJson(isValidJsonInput(jsonInput));
+        if (!isValidJsonInput(jsonInput)) {
+            setCurlGenerated(false);
+        }
     }, [jsonInput, isValidJsonInput]);
 
     const handleSubmit = async () => {
@@ -49,12 +53,14 @@ export default function GenerateCurl() {
                 title: "cURL generated successfully",
                 description: "You can now copy the command in your preferred format",
             });
+            setCurlGenerated(true);
         } catch (_) {
             toast({
                 variant: 'destructive',
                 title: 'Invalid JSON',
                 description: 'Please check your JSON input.',
             });
+            setCurlGenerated(false);
         }
     };
 
@@ -100,7 +106,7 @@ export default function GenerateCurl() {
 
                     <Button
                         onClick={handleSubmit}
-                        disabled={!isValidJson || isLoading}
+                        disabled={!jsonInput || !isValidJson || isLoading}
                         className="w-full mt-4 h-12 text-lg shadow-md transition-all duration-200 hover:scale- text-secondary
                         hover:bg-secondary hover:text-foreground hover:shadow-[6px_6.9px] hover:border-primary hover:border"
                     >
@@ -152,7 +158,7 @@ export default function GenerateCurl() {
 
                         {['pretty', 'single-line'].map((format) => (
                             <TabsContent key={format} value={format}>
-                                <div className="relative rounded-lg bg-foreground/5 p-4 ">
+                                <div className="relative rounded-lg bg-foreground/5 p-4 bg-red">
                                     <ScrollArea
                                         className={`h-[390px] ${wrapLines ? 'whitespace-pre-wrap' : 'whitespace-pre'}`}
                                     >
@@ -173,8 +179,9 @@ export default function GenerateCurl() {
                                                     size="default"
                                                     onClick={() => copyToClipboard(format)}
                                                     className={`h-10 w-10 transition-colors duration-300`}
+                                                    disabled={!curlGenerated}
                                                 >
-                                                    {copied ? (
+                                                    {copied && curlGenerated ? (
                                                         <ClipboardCheck
                                                             className="min-h-5 min-w-5 text-green-500 transition-transform duration-200"
                                                             style={{strokeWidth: '2.5'}}/>
